@@ -1,0 +1,9 @@
+text-input {
+  display: flex;
+  flex-direction: row
+}
+
+text-input-element {
+  display: flex;
+  flex-direction: column;
+}
