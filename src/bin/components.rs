@@ -89,5 +89,5 @@ fn main() {
         }),
         button("Hello world", ButtonModifier::none),
     ]);
-    fs::write("./button.html", view.write_to_string()).unwrap();
+    fs::write("./button.html", view.write_to_string(true)).unwrap();
 }

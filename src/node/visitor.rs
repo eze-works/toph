@@ -1,4 +1,5 @@
 use super::{attribute::Attribute, tag::*, Element, Node, Text};
+use std::borrow::Cow;
 use std::fmt;
 use std::io;
 use std::mem;
@@ -110,11 +111,54 @@ pub fn visit_nodes<V: NodeVisitor>(
 // A visitor that transforms a Node tree to an html string
 pub struct HtmlStringWriter<W> {
     html: W,
+    indent_level: usize,
+    indent: bool,
 }
 
 impl<W: fmt::Write> HtmlStringWriter<W> {
-    pub fn new(inner: W) -> Self {
-        Self { html: inner }
+    pub fn new(inner: W, indent: bool) -> Self {
+        Self {
+            html: inner,
+            indent_level: 0,
+            indent,
+        }
+    }
+
+    fn increment_indent(&mut self) {
+        if self.indent {
+            self.indent_level += 1;
+        }
+    }
+
+    fn decrement_indent(&mut self) {
+        if self.indent {
+            self.indent_level -= 1;
+        }
+    }
+
+    fn current_indent(&self) -> String {
+        if self.indent {
+            "  ".repeat(self.indent_level)
+        } else {
+            String::new()
+        }
+    }
+
+    fn newline(&self) -> &'static str {
+        if self.indent {
+            "\n"
+        } else {
+            ""
+        }
+    }
+
+    fn indent_text<'s>(&self, text: &'s str) -> Cow<'s, str> {
+        if !self.indent {
+            return Cow::Borrowed(text);
+        }
+
+        let replacement = format!("\n{}", self.current_indent());
+        Cow::Owned(text.trim_end().replace("\n", &replacement))
     }
 }
 
@@ -122,23 +166,40 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
     type Error = fmt::Error;
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
-        write!(self.html, "<{}", el.tag)?;
+        write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
         if el.attributes.len() > 0 {
             for attr in &el.attributes {
                 write!(self.html, "{}", attr)?;
             }
         }
-        write!(self.html, ">")?;
+        write!(self.html, ">{}", self.newline())?;
+        if !el.is_void() {
+            self.increment_indent();
+        }
         Ok(())
     }
 
     fn visit_close_tag(&mut self, tag: &'static str) -> Result<(), Self::Error> {
-        write!(self.html, "</{}>", tag)?;
+        self.decrement_indent();
+        write!(
+            self.html,
+            "{}</{}>{}",
+            self.current_indent(),
+            tag,
+            self.newline()
+        )?;
         Ok(())
     }
 
     fn visit_text(&mut self, text: &str) -> Result<(), Self::Error> {
-        write!(self.html, "{}", text)?;
+        let text = self.indent_text(text);
+        write!(
+            self.html,
+            "{}{}{}",
+            self.current_indent(),
+            text,
+            self.newline()
+        )?;
         Ok(())
     }
 }

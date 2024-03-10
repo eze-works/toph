@@ -1,190 +1,229 @@
-<!DOCTYPE html><html><head><style>/* http://meyerweb.com/eric/tools/css/reset/ 
-*
-   v2.0 | 20110126
-   License: none (public domain)
-*/
-
-html,
-body,
-div,
-span,
-applet,
-object,
-iframe,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-blockquote,
-pre,
-a,
-abbr,
-acronym,
-address,
-big,
-cite,
-code,
-del,
-dfn,
-em,
-img,
-ins,
-kbd,
-q,
-s,
-samp,
-small,
-strike,
-strong,
-sub,
-sup,
-tt,
-var,
-b,
-u,
-i,
-center,
-dl,
-dt,
-dd,
-ol,
-ul,
-li,
-fieldset,
-form,
-label,
-legend,
-table,
-caption,
-tbody,
-tfoot,
-thead,
-tr,
-th,
-td,
-article,
-aside,
-canvas,
-details,
-embed,
-figure,
-figcaption,
-footer,
-header,
-hgroup,
-menu,
-nav,
-output,
-ruby,
-section,
-summary,
-time,
-mark,
-audio,
-video,
-input {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  vertical-align: baseline;
-  box-sizing: border-box;
-}
-
-/* HTML5 display-role reset for older browsers */
-article,
-aside,
-details,
-figcaption,
-figure,
-footer,
-header,
-hgroup,
-menu,
-nav,
-section {
-  display: block;
-}
-
-ol,
-ul {
-  list-style: none;
-}
-
-blockquote,
-q {
-  quotes: none;
-}
-
-blockquote:before,
-blockquote:after,
-q:before,
-q:after {
-  content: "";
-  content: none;
-}
-
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-a {
-  text-decoration: none;
-}
-</style><style>text-input {
-  display: flex;
-  flex-direction: row
-}
-
-text-input-element {
-  display: flex;
-  flex-direction: column;
-}
-</style><style>button {
-  color: black;
-  background-color: white;
-}
-
-button[data-modifier="primary"] {
-  color: white;
-  background-color: blue;
-
-}
-
-button[data-modifier="secondary"] {
-  color: white;
-  background-color: pink;
-
-}
-
-button[data-modifier="warning"] {
-  color: white;
-  background-color: red;
-
-}
-</style><style>button {
-  color: black;
-  background-color: white;
-}
-
-button[data-modifier="primary"] {
-  color: white;
-  background-color: blue;
-
-}
-
-button[data-modifier="secondary"] {
-  color: white;
-  background-color: pink;
-
-}
-
-button[data-modifier="warning"] {
-  color: white;
-  background-color: red;
-
-}
-</style><title>My test site with html-string</title></head><body><css-reset></css-reset><text-input><text-input-element><label for="my-text-input">label</label><text-input-hint>input text here</text-input-hint><div><input id="my-text-input" name="my-text-input" type="text"></div></text-input-element><button data-modifier="secondary">Submit form</button></text-input><button data-modifier="none">Hello world</button></body></html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* http://meyerweb.com/eric/tools/css/reset/ 
+      *
+         v2.0 | 20110126
+         License: none (public domain)
+      */
+      
+      html,
+      body,
+      div,
+      span,
+      applet,
+      object,
+      iframe,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      blockquote,
+      pre,
+      a,
+      abbr,
+      acronym,
+      address,
+      big,
+      cite,
+      code,
+      del,
+      dfn,
+      em,
+      img,
+      ins,
+      kbd,
+      q,
+      s,
+      samp,
+      small,
+      strike,
+      strong,
+      sub,
+      sup,
+      tt,
+      var,
+      b,
+      u,
+      i,
+      center,
+      dl,
+      dt,
+      dd,
+      ol,
+      ul,
+      li,
+      fieldset,
+      form,
+      label,
+      legend,
+      table,
+      caption,
+      tbody,
+      tfoot,
+      thead,
+      tr,
+      th,
+      td,
+      article,
+      aside,
+      canvas,
+      details,
+      embed,
+      figure,
+      figcaption,
+      footer,
+      header,
+      hgroup,
+      menu,
+      nav,
+      output,
+      ruby,
+      section,
+      summary,
+      time,
+      mark,
+      audio,
+      video,
+      input {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        vertical-align: baseline;
+        box-sizing: border-box;
+      }
+      
+      /* HTML5 display-role reset for older browsers */
+      article,
+      aside,
+      details,
+      figcaption,
+      figure,
+      footer,
+      header,
+      hgroup,
+      menu,
+      nav,
+      section {
+        display: block;
+      }
+      
+      ol,
+      ul {
+        list-style: none;
+      }
+      
+      blockquote,
+      q {
+        quotes: none;
+      }
+      
+      blockquote:before,
+      blockquote:after,
+      q:before,
+      q:after {
+        content: "";
+        content: none;
+      }
+      
+      table {
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+      
+      a {
+        text-decoration: none;
+      }
+    </style>
+    <style>
+      text-input {
+        display: flex;
+        flex-direction: row
+      }
+      
+      text-input-element {
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+    <style>
+      button {
+        color: black;
+        background-color: white;
+      }
+      
+      button[data-modifier="primary"] {
+        color: white;
+        background-color: blue;
+      
+      }
+      
+      button[data-modifier="secondary"] {
+        color: white;
+        background-color: pink;
+      
+      }
+      
+      button[data-modifier="warning"] {
+        color: white;
+        background-color: red;
+      
+      }
+    </style>
+    <style>
+      button {
+        color: black;
+        background-color: white;
+      }
+      
+      button[data-modifier="primary"] {
+        color: white;
+        background-color: blue;
+      
+      }
+      
+      button[data-modifier="secondary"] {
+        color: white;
+        background-color: pink;
+      
+      }
+      
+      button[data-modifier="warning"] {
+        color: white;
+        background-color: red;
+      
+      }
+    </style>
+    <title>
+      My test site with html-string
+    </title>
+  </head>
+  <body>
+    <css-reset>
+    </css-reset>
+    <text-input>
+      <text-input-element>
+        <label for="my-text-input">
+          label
+        </label>
+        <text-input-hint>
+          input text here
+        </text-input-hint>
+        
+        <div>
+          <input id="my-text-input" name="my-text-input" type="text" placeholder="" value="">
+        </div>
+      </text-input-element>
+      <button data-modifier="secondary">
+        Submit form
+      </button>
+    </text-input>
+    <button data-modifier="none">
+      Hello world
+    </button>
+  </body>
+</html>

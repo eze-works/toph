@@ -69,9 +69,9 @@ pub struct Fragment(Vec<Node>);
 
 impl Node {
     /// Converts the tree rooted at this node to an HTML string
-    pub fn write_to_string(&mut self) -> String {
+    pub fn write_to_string(&mut self, indent: bool) -> String {
         let mut buf = String::new();
-        let writer = visitor::HtmlStringWriter::new(&mut buf);
+        let writer = visitor::HtmlStringWriter::new(&mut buf, indent);
         visitor::visit_nodes(self, writer).expect("printing to a string should not fail");
         buf
     }
@@ -205,7 +205,7 @@ mod tests {
 
     #[track_caller]
     fn assert_html(node: impl Into<Node>, expected: &str) {
-        assert_eq!((&mut node.into()).write_to_string(), expected);
+        assert_eq!((&mut node.into()).write_to_string(false), expected);
     }
 
     #[test]
