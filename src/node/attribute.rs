@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 /// An HTML Attribute
 ///
-/// You will generally be using the [attribute list builder](crate::a) to create HTML attributes
+/// You will generally be using the [attribute list builder](crate::attr) to create HTML attributes
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Attribute {
     /// A boolean attribute (e.g. `<input hidden>`

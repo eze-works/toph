@@ -1,4 +1,4 @@
-use super::{attribute::Attribute, Element, Node, Text};
+use super::{attribute::Attribute, tag::*, Element, Node, Text};
 use std::fmt;
 use std::io;
 use std::mem;
@@ -6,6 +6,40 @@ use std::mem;
 enum Tag<'n> {
     Open(Option<&'n mut Node>),
     Close(&'static str),
+}
+
+// Extracts all css & javascript assets from the subtrees and places them in <style> & <script>
+// nodes
+pub fn include_assets(node: &mut Node) {
+    // Get assets
+    let mut collector = AssetCollector::new();
+    visit_nodes(node, &mut collector).expect("collecting assets does not fail");
+
+    let mut style = None;
+    let mut script = None;
+
+    let script_fragments = collector
+        .js
+        .into_iter()
+        .map(|j| script_.set(j))
+        .collect::<Vec<_>>();
+    let style_fragments = collector
+        .css
+        .into_iter()
+        .map(|c| style_.set(c))
+        .collect::<Vec<_>>();
+
+    if script_fragments.len() > 0 {
+        script = Some(script_fragments.into());
+    }
+
+    if style_fragments.len() > 0 {
+        style = Some(style_fragments.into());
+    }
+
+    // Insert them into the tree
+    let inserter = AssetInserter::new(style, script);
+    visit_nodes(node, inserter).expect("inserting nodes does not fail");
 }
 
 // The visitor pattern[1] is used for traversing a Node tree.

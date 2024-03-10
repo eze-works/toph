@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::fs;
-use toph::{tag::*, Node, attr};
+use toph::{attr, tag::*, Node};
 
 #[derive(strum::Display)]
 #[allow(non_camel_case_types)]
@@ -12,10 +12,9 @@ enum ButtonModifier {
 }
 
 fn button(text: &'static str, modifier: ButtonModifier) -> Node {
-    button_((
-        attr![@css=include_str!("./button.css"), data_modifier = modifier.to_string()],
-        text,
-    ))
+    button_
+        .with(attr![@css=include_str!("./button.css"), data_modifier = modifier.to_string()])
+        .set(text)
 }
 
 struct TextInputProps<'v, 'e> {
@@ -38,48 +37,43 @@ fn text_input(
         submit_button,
     }: TextInputProps,
 ) -> Node {
-    custom_(
-        "text-input",
-        (
-            attr![@css=include_str!("./textinput.css")],
-            [
-                custom_(
-                    "text-input-element",
-                    [
-                        label.map(|s| label_((attr![for=id], s))).unwrap_or_default(),
-                        hint.map(|s| custom_("text-input-hint", s))
-                            .unwrap_or_default(),
-                        error
-                            .map(|s| custom_("text-input-error", s.to_string()))
-                            .unwrap_or_default(),
-                        div_(input_(attr![
-                            id=id,
-                            name=id,
-                            type="text",
-                            placeholder=placeholder.unwrap_or_default(),
-                            value=value.unwrap_or_default().to_string()
-                        ])),
-                    ],
-                ),
-                submit_button,
-            ],
-        ),
-    )
+    custom_("text-input")
+        .with(attr![@css=include_str!("./textinput.css")])
+        .set([
+            custom_("text-input-element").set([
+                label
+                    .map(|s| label_.with(attr![for=id]).set(s))
+                    .unwrap_or_default(),
+                hint.map(|s| custom_("text-input-hint").set(s))
+                    .unwrap_or_default(),
+                error
+                    .map(|s| custom_("text-input-error").set(s.to_string()))
+                    .unwrap_or_default(),
+                div_.set(input_.with(attr![
+                    id=id,
+                    name=id,
+                    type="text",
+                    placeholder=placeholder.unwrap_or_default(),
+                    value=value.unwrap_or_default().to_string()
+                ])),
+            ]),
+            submit_button,
+        ])
 }
 
 fn layout(child: impl Into<Node>) -> Node {
     [
-        doctype_(),
-        html_([
-            head_([title_("My test site with html-string")]),
-            body_([css_reset(), child.into()]),
+        doctype_,
+        html_.set([
+            head_.set([title_.set("My test site with html-string")]),
+            body_.set([css_reset(), child.into()]),
         ]),
     ]
     .into()
 }
 
 fn css_reset() -> Node {
-    custom_("css-reset", attr![@css=include_str!("./reset.css")])
+    custom_("css-reset").with(attr![@css=include_str!("./reset.css")])
 }
 
 fn main() {

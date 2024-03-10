@@ -3,6 +3,7 @@ pub mod tag;
 pub mod visitor;
 
 use crate::encode;
+use attribute::Attribute;
 use std::borrow::Cow;
 use std::io;
 
@@ -44,7 +45,7 @@ impl Element {
                 | "source"
                 | "track"
                 | "wbr"
-                | "!DOCTYPE"
+                | "!DOCTYPE html"
         )
     }
 }
@@ -79,6 +80,77 @@ impl Node {
     pub fn write<W: io::Write>(&mut self, w: W) -> Result<(), io::Error> {
         let writer = visitor::HtmlWriter::new(w);
         visitor::visit_nodes(self, writer)
+    }
+
+    /// Sets attributes for the element.
+    ///
+    /// A mix of boolean & regular attributes can be set
+    ///
+    /// ```
+    /// use toph::{attr, tag::*};
+    /// span_.with(attr![class="card", hidden]);
+    /// ```
+    ///
+    /// There is special syntax for attaching Javascript & css snippets to a node.
+    /// ```
+    /// use toph::{attr, tag::*};
+    /// span_.with(attr![@css=".btn { background-color: black; }"]);
+    /// span_.with(attr![@js="console.log('hello world')"]);
+    /// ```
+    ///
+    /// Javascript & Css snippets are expected to be string literals. For anything other than
+    /// trivial styles & scripts you can use [`include_str!`]
+    ///
+    /// See the [attr](crate::attr) macro docs for details.
+    pub fn with(mut self, attributes: Vec<Attribute>) -> Node {
+        match self {
+            Self::Element(ref mut el) => {
+                el.attributes = attributes;
+            }
+            _ => {}
+        }
+        self
+    }
+
+    /// Sets this Element's children
+    ///
+    /// You can pass in anything that can be converted to a [`Node`](crate::Node):
+    ///
+    /// ```
+    /// use toph::tag::*;
+    ///
+    /// // A single 'static string slice
+    /// span_.set("hello");
+    ///
+    /// // An owned string
+    /// span_.set(String::from("hello"));
+    ///
+    /// // These are equivalent
+    /// span_;
+    /// span_.set([]);
+    ///
+    /// // An array of nodes
+    /// span_.set([div_, span_]);
+    ///
+    /// // 'static string slices and owned strings can be
+    /// // converted to nodes, so this also works
+    /// span_.set([
+    ///     div_,
+    ///     "bare string".into(),
+    ///     span_,
+    /// ]);
+    /// ```
+    pub fn set(mut self, child: impl Into<Node>) -> Node {
+        match self {
+            Self::Element(ref mut el) => {
+                el.child = Some(Box::new(child.into()));
+                if el.tag == "html" {
+                    visitor::include_assets(&mut self);
+                }
+            }
+            _ => {}
+        }
+        self
     }
 }
 
@@ -146,63 +218,63 @@ mod tests {
     fn html_fragments() {
         // including strings
         assert_html(
-            [span_("literal"), span_(String::from("string"))],
+            [span_.set("literal"), span_.set(String::from("string"))],
             "<span>literal</span><span>string</span>",
         );
 
         // nesting nodes
         assert_html(
-            [div_(span_([])), div_([span_([])]), div_([])],
-            "<div><span></span></div><div><span></span></div><div></div>",
+            [div_.set([span_, div_.set(div_)])],
+            "<div><span></span><div><div></div></div></div>",
         );
 
         // literal attribute values can be used with unsafe sinks
         assert_html(
-            span_(attr![onclick = "something"]),
+            span_.with(attr![onclick = "something"]),
             r#"<span onclick="something"></span>"#,
         );
         // non-literal attribute values cannot be used with unsafe sinks
-        assert_html(span_(attr![onclick = String::new()]), "<span></span>");
+        assert_html(span_.with(attr![onclick = String::new()]), "<span></span>");
 
         // literal urls can include any scheme
         assert_html(
-            span_(attr![src = "javascript:boom"]),
+            span_.with(attr![src = "javascript:boom"]),
             r#"<span src="javascript:boom"></span>"#,
         );
 
         // non-literal urls may only use safe schemes
         assert_html(
-            span_(attr![src = String::from("javascript:")]),
+            span_.with(attr![src = String::from("javascript:")]),
             "<span></span>",
         );
         assert_html(
-            span_(attr![src = String::from("mailto:a.com")]),
+            span_.with(attr![src = String::from("mailto:a.com")]),
             r#"<span src="mailto:a.com"></span>"#,
         );
 
         // boolean attributes are supported
-        assert_html(span_(attr![async]), "<span async></span>");
+        assert_html(span_.with(attr![async]), "<span async></span>");
 
         // mix of regular & boolean attributes
         assert_html(
-            span_(attr![async, class = "hidden", checked]),
+            span_.with(attr![async, class = "hidden", checked]),
             r#"<span async class="hidden" checked></span>"#,
         );
         assert_html(
-            span_(attr![class = "hidden", async, id = "id"]),
+            span_.with(attr![class = "hidden", async, id = "id"]),
             r#"<span class="hidden" async id="id"></span>"#,
         );
 
         // optional comma at the end of attribute list
-        assert_html(span_(attr![async,]), "<span async></span>");
+        assert_html(span_.with(attr![async,]), "<span async></span>");
         assert_html(
-            span_(attr![class = "class",]),
+            span_.with(attr![class = "class",]),
             r#"<span class="class"></span>"#,
         );
 
         // data-* attributes are supported
         assert_html(
-            span_(attr![data_custom = "hello"]),
+            span_.with(attr![data_custom = "hello"]),
             r#"<span data-custom="hello"></span>"#,
         );
     }
@@ -211,21 +283,21 @@ mod tests {
     fn including_assets() {
         // css is included if there is a head element
         assert_html(
-            [html_([head_(title_([])), body_(attr![@css="some css"])])],
+            [html_.set([head_.set(title_), body_.with(attr![@css="some css"])])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
         assert_html(
-            [html_(body_(attr![@css="some css"]))],
+            [html_.set(body_.with(attr![@css="some css"]))],
             "<html><body></body></html>",
         );
 
         // js is included if there is a body element
         assert_html(
-            [html_(body_((attr![@js="some js"], span_([]))))],
+            [html_.set(body_.with(attr![@js="some js"]).set(span_))],
             "<html><body><span></span><script>some js</script></body></html>",
         );
         assert_html(
-            [html_(span_(attr![@js="some js"]))],
+            [html_.set(span_.with(attr![@js="some js"]))],
             "<html><span></span></html>",
         );
     }
