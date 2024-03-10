@@ -1,33 +1,30 @@
-// Documentation resources:
-//
-// Escaping output:
-// Wordpress: https://developer.wordpress.org/apis/security/escaping/
-// OWASP:
-// https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#output-encoding
-
 pub mod attribute;
 pub mod tag;
 pub mod visitor;
 
 use crate::encode;
 use std::borrow::Cow;
-use std::ops;
+use std::io;
 
+/// An HTML Node
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Node {
+    /// See [`Element`]
     Element(Element),
+    /// See [`Text`]
     Text(Text),
+    // See [`Fragment`]
+    #[doc(hidden)]
     Fragment(Fragment),
-    Empty,
 }
 
+/// An HTML element. All [tag functions](crate::tag) create an HTML node with this variant
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Element {
     tag: &'static str,
     attributes: Vec<attribute::Attribute>,
     child: Option<Box<Node>>,
-    css: Css,
-    js: Js,
 }
 
 impl Element {
@@ -58,56 +55,30 @@ impl Default for Node {
     }
 }
 
+/// A text element. This is the variant created when a string is given as an argument to a tag
+/// function
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Text(Cow<'static, str>);
 
+// Fragment is a container for multiple `Node`s. It's the variant created with an array of
+// nodes is converted to a single node. It is an implementation detail.
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Fragment(Vec<Node>);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct Css(pub &'static str);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct Js(pub &'static str);
-
 impl Node {
+    /// Converts the tree rooted at this node to an HTML string
     pub fn write_to_string(&mut self) -> String {
         let mut buf = String::new();
         let writer = visitor::HtmlStringWriter::new(&mut buf);
         visitor::visit_nodes(self, writer).expect("printing to a string should not fail");
         buf
     }
-}
 
-impl ops::Add<Css> for Node {
-    type Output = Self;
-    fn add(mut self, rhs: Css) -> Self::Output {
-        if rhs.0.is_empty() {
-            return self;
-        }
-        match self {
-            Node::Element(ref mut el) => {
-                el.css = rhs;
-                self
-            }
-            _ => self,
-        }
-    }
-}
-
-impl ops::Add<Js> for Node {
-    type Output = Self;
-    fn add(mut self, rhs: Js) -> Self::Output {
-        if rhs.0.is_empty() {
-            return self;
-        }
-        match self {
-            Node::Element(ref mut el) => {
-                el.js = rhs;
-                self
-            }
-            _ => self,
-        }
+    /// Writes the HTML for the tree rooted at this node to anything that implements [`io::Write`]
+    pub fn write<W: io::Write>(&mut self, w: W) -> Result<(), io::Error> {
+        let writer = visitor::HtmlWriter::new(w);
+        visitor::visit_nodes(self, writer)
     }
 }
 
@@ -136,9 +107,14 @@ macro_rules! impl_node_for_array_of_nodes {
     };
 }
 
+impl From<Vec<Node>> for Node {
+    fn from(value: Vec<Node>) -> Self {
+        Self::Fragment(Fragment(value))
+    }
+}
 impl From<[Node; 0]> for Node {
     fn from(_value: [Node; 0]) -> Self {
-        Self::Empty
+        Self::Text(Text("".into()))
     }
 }
 
@@ -232,29 +208,24 @@ mod tests {
     }
 
     #[test]
-    fn attribute_quoting() {
-        let eggplant = "eggplant".to_string();
-    }
-
-    #[test]
     fn including_assets() {
         // css is included if there is a head element
         assert_html(
-            [html_([head_(title_([])), body_([]) + Css("some css")])],
+            [html_([head_(title_([])), body_(__![@css="some css"])])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
         assert_html(
-            [html_(body_([]) + Css("some css"))],
+            [html_(body_(__![@css="some css"]))],
             "<html><body></body></html>",
         );
 
         // js is included if there is a body element
         assert_html(
-            [html_(body_(span_([])) + Js("some js"))],
+            [html_(body_((__![@js="some js"], span_([]))))],
             "<html><body><span></span><script>some js</script></body></html>",
         );
         assert_html(
-            [html_(span_([])) + Js("some js")],
+            [html_(span_(__![@js="some js"]))],
             "<html><span></span></html>",
         );
     }

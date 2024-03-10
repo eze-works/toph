@@ -1,17 +1,17 @@
 [package]
-name = "html-string"
-version = "0.3.0"
+name = "toph"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
 description = "Simple server-side html generation"
-repository = "https://gitlab.com/wake-sleeper/html-string"
+repository = "https://git.sr.ht/~eanyanwu/toph"
 
 keywords = ["template", "html"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-percent-encoding = "2.2.0"
+paste = "1.0.14"
 strum = { version = "0.26.1", features = ["derive"] }
 url = "2.5.0"

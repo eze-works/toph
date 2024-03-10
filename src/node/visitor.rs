@@ -90,8 +90,8 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "<{}", el.tag)?;
         if el.attributes.len() > 0 {
-            for attr in el.attributes.iter().filter(|&f| f != &Attribute::Empty) {
-                write!(self.html, " {}", attr)?;
+            for attr in &el.attributes {
+                write!(self.html, "{}", attr)?;
             }
         }
         write!(self.html, ">")?;
@@ -125,8 +125,8 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "<{}", el.tag)?;
         if el.attributes.len() > 0 {
-            for attr in el.attributes.iter().filter(|&f| f != &Attribute::Empty) {
-                write!(self.html, " {}", attr)?;
+            for attr in &el.attributes {
+                write!(self.html, "{}", attr)?;
             }
         }
         write!(self.html, ">")?;
@@ -204,11 +204,16 @@ impl NodeVisitor for &mut AssetCollector {
     type Error = ();
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
-        if el.css.0.len() > 0 {
-            self.css.push(el.css.0);
-        }
-        if el.js.0.len() > 0 {
-            self.js.push(el.js.0);
+        for attr in &el.attributes {
+            match attr {
+                Attribute::Js(js) => {
+                    self.js.push(js);
+                }
+                Attribute::Css(css) => {
+                    self.css.push(css);
+                }
+                _ => {}
+            }
         }
         Ok(())
     }

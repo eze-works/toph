@@ -1,5 +1,6 @@
-use html_string::{tag::*, Css, Node, __};
+#![allow(dead_code)]
 use std::fs;
+use toph::{tag::*, Node, __};
 
 #[derive(strum::Display)]
 #[allow(non_camel_case_types)]
@@ -11,7 +12,10 @@ enum ButtonModifier {
 }
 
 fn button(text: &'static str, modifier: ButtonModifier) -> Node {
-    button_((__![data_modifier = modifier.to_string()], text)) + Css(include_str!("./button.css"))
+    button_((
+        __![@css=include_str!("./button.css"), data_modifier = modifier.to_string()],
+        text,
+    ))
 }
 
 struct TextInputProps<'v, 'e> {
@@ -36,28 +40,31 @@ fn text_input(
 ) -> Node {
     custom_(
         "text-input",
-        [
-            custom_(
-                "text-input-element",
-                [
-                    label.map(|s| label_((__![for=id], s))).unwrap_or_default(),
-                    hint.map(|s| custom_("text-input-hint", s))
-                        .unwrap_or_default(),
-                    error
-                        .map(|s| custom_("text-input-error", s.to_string()))
-                        .unwrap_or_default(),
-                    div_(input_(__![
-                        id=id,
-                        name=id,
-                        type="text",
-                        placeholder=placeholder.unwrap_or_default(),
-                        value=value.unwrap_or_default().to_string()
-                    ])),
-                ],
-            ),
-            submit_button,
-        ],
-    ) + Css(include_str!("./textinput.css"))
+        (
+            __![@css=include_str!("./textinput.css")],
+            [
+                custom_(
+                    "text-input-element",
+                    [
+                        label.map(|s| label_((__![for=id], s))).unwrap_or_default(),
+                        hint.map(|s| custom_("text-input-hint", s))
+                            .unwrap_or_default(),
+                        error
+                            .map(|s| custom_("text-input-error", s.to_string()))
+                            .unwrap_or_default(),
+                        div_(input_(__![
+                            id=id,
+                            name=id,
+                            type="text",
+                            placeholder=placeholder.unwrap_or_default(),
+                            value=value.unwrap_or_default().to_string()
+                        ])),
+                    ],
+                ),
+                submit_button,
+            ],
+        ),
+    )
 }
 
 fn layout(child: impl Into<Node>) -> Node {
@@ -72,7 +79,7 @@ fn layout(child: impl Into<Node>) -> Node {
 }
 
 fn css_reset() -> Node {
-    custom_("css-reset", []) + Css(include_str!("./reset.css"))
+    custom_("css-reset", __![@css=include_str!("./reset.css")])
 }
 
 fn main() {

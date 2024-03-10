@@ -1,29 +1,171 @@
-//! HTML Document generation through function composition
+//! HTML document building through function composition
 //!
-//! Functions in this module are named after the html node they generate. Nest function calls to
+//! Functions in this module are named after the html tag they generate. Nest function calls to
 //! generate a tree:
 //!
-//! TODO
+//! ```
+//! use toph::tag::*;
+//!
+//! let tree = html_([
+//!     head_(
+//!         title_("My Website")
+//!     ),
+//!     body_(
+//!         h1_("My header")
+//!     )
+//! ]);
+//! ```
+//!
+//! With the exception of [`custom_()`] and [`doctype_()`] functions, all functions in this module
+//! accept exactly __one__ argument.
+//!
+//! You can pass in anything that can be converted to a [`Node`](crate::Node):
+//!
+//! ```
+//! use toph::tag::*;
+//!
+//! // A single 'static string slice
+//! span_("hello");
+//!
+//! // An owned string
+//! span_(String::from("hello"));
+//!
+//! // An empty array (implies no child nodes)
+//! span_([]);
+//!
+//! // An array of nodes
+//! span_([div_([]), span_([])]);
+//!
+//! // 'static string slices and owned strings can be
+//! // converted to nodes, so this also works
+//! span_([
+//!     div_([]),
+//!     "bare string".into(),
+//!     span_([])
+//! ]);
+//!
+//! ```
+//!
+//! You can pass in a [list of attributes](crate::__):
+//!
+//! ```
+//! use toph::{__, tag::*};
+//! span_(__![class="card", hidden]);
+//! ```
+//!
+//! You can pass both of the above if you place them in a tuple
+//!
+//! ```
+//! use toph::{__, tag::*};
+//!
+//! span_((
+//!     __![class="card",hidden],
+//!     "hello"
+//! ));
+//!
+//! span_((
+//!     __![class="card",hidden],
+//!     [
+//!         div_([]),
+//!         span_([]),
+//!     ]
+//! ));
+//! ```
+//!
+//! ## XSS Prevention
+//!
+//! `'static` string slices in Rust generally[^1] correspond to string literals. This crate takes
+//! advantage of this by allowing `'static` string slices to appear anywhere in the HTML un-encoded
+//! since by their nature they cannot contain user input, and so are safe.
+//!
+//! For owned strings, a handful of measures are taken to protect against Cross-site scripting
+//! attacks (XSS):
+//!
+//! - Owned strings are appropriately encoded in HTML, attribute and URL contexts:
+//! ```
+//! use toph::{__, tag::*};
+//!
+//! let xss_attr_attempt = String::from(r#"" onclick="alert(1)""#);
+//! let xss_attempt = String::from(r#"><script>alert(1)"#);
+//! let url = String::from("/path with space");
+//!
+//! let mut span = span_((
+//!     __![class=xss_attr_attempt],
+//!     xss_attempt
+//! ));
+//!
+//! let mut anchor = a_((
+//!     __![href=url],
+//!     "A link"
+//! ));
 //!
 //!
-//! use tag::*
+//! assert_eq!(
+//!     span.write_to_string(),
+//!     r#"<span class="&quot; onclick=&quot;alert(1)&quot;">&gt;&lt;script&gt;alert(1)</span>"#
+//! );
 //!
-//! div_
-//!     .class_("myclass")
-//!     .id_("my-id")
-//!     
+//! assert_eq!(
+//!     anchor.write_to_string(),
+//!     r#"<a href="/path%20with%20space">A link</a>"#
+//! );
+//! ```
 //!
-//! )
+//! - Owned strings may only be used to set HTML attributes that are considered [safe
+//! sinks](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#output-encoding-for-html-attribute-contexts).
+//! Notably, none of the event attributes (`on*`) are on this list.
+//!
+//! ```
+//! use toph::{__, tag::*};
+//!
+//! let user_input = String::from("alert(1)");
+//! let mut html = button_(__![onclick=user_input]);
+//! assert_eq!(
+//!     html.write_to_string(),
+//!     r#"<button></button>"# // the attribute is ignored
+//! );
+//!
+//! // You can still set any atribute you want using `'static` string slices
+//! let mut html = button_(__![onclick="alert(1)"]);
+//! assert_eq!(
+//!     html.write_to_string(),
+//!     r#"<button onclick="alert(1)"></button>"#
+//! );
+//! ```
+//!
+//! - A subset of the safe attributes are recognized as URL attributes. For these, there is a
+//! whitelist of allowed schemes. Notably, this excludes `javascript:`
+//!
+//! ```
+//! use toph::{__, tag::*};
+//!
+//!
+//! let mut html = a_(__![href=String::from("mailto:a.com")]);
+//! assert_eq!(
+//!     html.write_to_string(),
+//!     r#"<a href="mailto:a.com"></a>"#
+//! );
+//!
+//! let mut html = a_(__![href=String::from("javascript:alert(1)")]);
+//! assert_eq!(
+//!     html.write_to_string(),
+//!     "<a></a>"
+//! );
+//! ```
+//!
+//! [^1]: [`String::leak`] does allow you to get a `&'static mut str`. However even that won't work
+//! with this crate because the APIs expect a shared reference.
 
-use super::*;
 use super::attribute::Attribute;
+use super::*;
 
-pub struct TagProps {
+/// The type used to by tag functions to create HTML [`Node`]s
+pub struct TagArgs {
     child: Option<Box<Node>>,
     attributes: Vec<Attribute>,
 }
 
-impl<I> From<I> for TagProps
+impl<I> From<I> for TagArgs
 where
     I: Into<Node>,
 {
@@ -36,7 +178,7 @@ where
     }
 }
 
-impl From<Vec<Attribute>> for TagProps {
+impl From<Vec<Attribute>> for TagArgs {
     fn from(value: Vec<Attribute>) -> Self {
         Self {
             child: None,
@@ -45,13 +187,13 @@ impl From<Vec<Attribute>> for TagProps {
     }
 }
 
-impl From<(Vec<Attribute>,)> for TagProps {
+impl From<(Vec<Attribute>,)> for TagArgs {
     fn from(value: (Vec<Attribute>,)) -> Self {
-        TagProps::from(value.0)
+        TagArgs::from(value.0)
     }
 }
 
-impl<I> From<(Vec<Attribute>, I)> for TagProps
+impl<I> From<(Vec<Attribute>, I)> for TagArgs
 where
     I: Into<Node>,
 {
@@ -64,39 +206,32 @@ where
     }
 }
 
-pub fn empty_() -> Node {
-    Node::Empty
-}
-
-pub fn custom_(tag: &'static str, props: impl Into<TagProps>) -> Node {
-    let props = props.into();
+/// Creates an HTML Node with a custom tag name.
+pub fn custom_(tag: &'static str, args: impl Into<TagArgs>) -> Node {
+    let args = args.into();
     Node::Element(Element {
         tag,
-        child: props.child,
-        attributes: props.attributes,
-        css: Css::default(),
-        js: Js::default(),
+        child: args.child,
+        attributes: args.attributes,
     })
 }
 
+/// Creates a `<!DOCTYPE html>` node
 pub fn doctype_() -> Node {
     Node::Element(Element {
         tag: "!DOCTYPE",
-        child: Some(Box::new(Node::Empty)),
+        child: None,
         attributes: vec![Attribute::new_boolean("html")],
-        css: Css::default(),
-        js: Js::default(),
     })
 }
 
-pub fn html_(props: impl Into<TagProps>) -> Node {
-    let props = props.into();
+/// Creates a `<html>` node
+pub fn html_(args: impl Into<TagArgs>) -> Node {
+    let args = args.into();
     let mut node = Node::Element(Element {
         tag: "html",
-        child: props.child,
-        attributes: props.attributes,
-        css: Css::default(),
-        js: Js::default(),
+        child: args.child,
+        attributes: args.attributes,
     });
 
     include_assets(&mut node);
@@ -129,23 +264,26 @@ fn include_assets(node: &mut Node) {
     let inserter = visitor::AssetInserter::new(style, script);
     visitor::visit_nodes(node, inserter).expect("inserting nodes does not fail");
 }
-macro_rules! impl_tag {
-    ($($tag:ident), +) => {
-        $(
-            #[inline]
-            pub fn $tag(props: impl Into<TagProps>) -> Node {
-                let props = props.into();
-                let tag = stringify!($tag).strip_suffix("_").expect("tag names must end in an underscore");
-                Node::Element(Element {
-                    tag,
-                    child: props.child,
-                    attributes: props.attributes,
-                    css: Css::default(),
-                    js: Js::default(),
-                })
 
-            }
+macro_rules! impl_tag {
+    ($($tag:ident),+) => {
+        $(
+            impl_tag!(@withdoc $tag, concat!("Creates a `", stringify!($tag), "` HTML element"));
         )+
+    };
+    (@withdoc $tag:ident, $doc:expr) => {
+        paste::paste!{
+            #[doc = $doc]
+            #[inline]
+            pub fn [<$tag _>](args: impl Into<TagArgs>) -> Node {
+                let args = args.into();
+                Node::Element(Element {
+                    tag: stringify!($tag),
+                    child: args.child,
+                    attributes: args.attributes,
+                })
+            }
+        }
     }
 }
 
@@ -154,33 +292,33 @@ impl_tag![
     // main root
     // html_
     // document metadata
-    base_, head_, link_, meta_, style_, title_,
+    base, head, link, meta, style, title,
     // sectioning root
-    body_,
+    body,
     // content sectioning
-    address_, article_, aside_, footer_, header_, h1_, h2_, h3_, h4_, h5_, h6_, main_, nav_, section_,
+    address, article, aside, footer, header, h1, h2, h3, h4, h5, h6, main, nav, section,
     // text content
-    blockquote_, dd_, div_, dl_, dt_, figcaption_, figure_, hr_, li_, menu_, ol_, p_, pre_, ul_,
+    blockquote, dd, div, dl, dt, figcaption, figure, hr, li, menu, ol, p, pre, ul,
     // inline text semantics
-    a_, abbr_, b_, bdi_, bdo_, br_, cite_, code_, data_, dfn_, em_, i_, kbd_, mark_, q_, rp_, rt_, ruby_, s_, samp_,
-    small_, span_, strong_, sub_, sup_, time_, u_, var_, wbr_,
+    a, abbr, b, bdi, bdo, br, cite, code, data, dfn, em, i, kbd, mark, q, rp, rt, ruby, s, samp,
+    small, span, strong, sub, sup, time, u, var, wbr,
     // image and multimedia
-    area_, audio_, img_, map_, track_, video_,
+    area, audio, img, map, track, video,
     // embedded content
-    embed_, iframe_, object_, picture_, portal_, source_,
+    embed, iframe, object, picture, portal, source,
     // svg and mathml
-    svg_, math_,
+    svg, math,
     // scripting
-    canvas_, noscript_, script_,
+    canvas, noscript, script,
     // demarcating edits
-    del_, ins_,
+    del, ins,
     // table content
-    caption, col_, colgroup_, table_, tbody_, td_, tfoot_, th_, thead_, tr_,
+    caption, col, colgroup, table, tbody, td, tfoot, th, thead, tr,
     // forms
-    button_, datalist_, fieldset_, form_, input_, label_, legend_, meter_, optgroup_, option_, output_,
-    progress_, select_, textarea_,
+    button, datalist, fieldset, form, input, label, legend, meter, optgroup, option, output,
+    progress, select, textarea,
     // interactive elements
-    details_, dialog_, summary_,
+    details, dialog, summary,
     // web components
-    slot_, template_
+    slot, template
 ];
