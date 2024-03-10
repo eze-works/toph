@@ -2,6 +2,8 @@
 //!
 //! The constants in this module are of type [`Node`](crate::Node) and are named after the HTML
 //! tags they generate.
+//!
+//! You can also create an HTML element [with a custom tag name](crate::tag::custom_).
 
 use super::*;
 

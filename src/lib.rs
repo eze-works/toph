@@ -1,10 +1,18 @@
-//! Build HTML documents in Rust
+//! An API for building  HTML documents.
+//!
+//! - [Print the resulting `Node` to a string](crate::Node::write_to_string) or [write it to an
+//! `io::Write` instance](crate::Node::write).
+//! - [Safely](#xss-prevention) set attributes and content on HTML elements.
+//! - [Link css & javascript snippets to HTML elements](crate::Node::with), such that those
+//! snippets only appear if the linked element is displayed.
+//!
+//! ## Example
 //!
 //! ```
-//! use toph::{attr, tag::*};
+//! use toph::{attr, Node, tag::*};
 //!
 //! let navigation = [("Home", "/"), ("Posts", "/posts")];
-//! let doc = [
+//! let mut doc = Node::from([
 //!     doctype_,
 //!     html_.with(attr![lang="en"])
 //!         .set([
@@ -16,10 +24,43 @@
 //!                             li_.set(a_.with(attr![href=url]).set(caption))
 //!                         }).collect::<Vec<_>>()
 //!                     ),
-//!                 h1_.set("My Webpage")
+//!                 h1_.with(attr![@css="h1 { text-decoration: underline; }"])
+//!                     .set("My Webpage")
 //!             ])
 //!         ])
-//! ];
+//! ]);
+//!
+//! assert_eq!(
+//!     doc.write_to_string(true),
+//!     r#"<!DOCTYPE html>
+//! <html lang="en">
+//!   <head>
+//!     <style>
+//!       h1 { text-decoration: underline; }
+//!     </style>
+//!     <title>
+//!       My Webpage
+//!     </title>
+//!   </head>
+//!   <body>
+//!     <ul id="navigation">
+//!       <li>
+//!         <a href="/">
+//!           Home
+//!         </a>
+//!       </li>
+//!       <li>
+//!         <a href="/posts">
+//!           Posts
+//!         </a>
+//!       </li>
+//!     </ul>
+//!     <h1>
+//!       My Webpage
+//!     </h1>
+//!   </body>
+//! </html>
+//! "#);
 //! ```
 //!
 //! ## XSS Prevention
@@ -48,12 +89,12 @@
 //!     .set("A link");
 //!
 //! assert_eq!(
-//!     span.write_to_string(),
+//!     span.write_to_string(false),
 //!     r#"<span class="&quot; onclick=&quot;alert(1)&quot;">&gt;&lt;script&gt;alert(1)</span>"#
 //! );
 //!
 //! assert_eq!(
-//!     anchor.write_to_string(),
+//!     anchor.write_to_string(false),
 //!     r#"<a href="/path%20with%20space">A link</a>"#
 //! );
 //! ```
@@ -68,14 +109,14 @@
 //! let user_input = String::from("alert(1)");
 //! let mut html = button_.with(attr![onclick=user_input]);
 //! assert_eq!(
-//!     html.write_to_string(),
+//!     html.write_to_string(false),
 //!     r#"<button></button>"# // the attribute is ignored
 //! );
 //!
 //! // You can still set any atribute you want using `'static` string slices
 //! let mut html = button_.with(attr![onclick="alert(1)"]);
 //! assert_eq!(
-//!     html.write_to_string(),
+//!     html.write_to_string(false),
 //!     r#"<button onclick="alert(1)"></button>"#
 //! );
 //! ```
@@ -89,13 +130,13 @@
 //!
 //! let mut html = a_.with(attr![href=String::from("mailto:a.com")]);
 //! assert_eq!(
-//!     html.write_to_string(),
+//!     html.write_to_string(false),
 //!     r#"<a href="mailto:a.com"></a>"#
 //! );
 //!
 //! let mut html = a_.with(attr![href=String::from("javascript:alert(1)")]);
 //! assert_eq!(
-//!     html.write_to_string(),
+//!     html.write_to_string(false),
 //!     "<a></a>"
 //! );
 //! ```
