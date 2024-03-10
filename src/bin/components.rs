@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::fs;
-use toph::{tag::*, Node, __};
+use toph::{tag::*, Node, attr};
 
 #[derive(strum::Display)]
 #[allow(non_camel_case_types)]
@@ -13,7 +13,7 @@ enum ButtonModifier {
 
 fn button(text: &'static str, modifier: ButtonModifier) -> Node {
     button_((
-        __![@css=include_str!("./button.css"), data_modifier = modifier.to_string()],
+        attr![@css=include_str!("./button.css"), data_modifier = modifier.to_string()],
         text,
     ))
 }
@@ -41,18 +41,18 @@ fn text_input(
     custom_(
         "text-input",
         (
-            __![@css=include_str!("./textinput.css")],
+            attr![@css=include_str!("./textinput.css")],
             [
                 custom_(
                     "text-input-element",
                     [
-                        label.map(|s| label_((__![for=id], s))).unwrap_or_default(),
+                        label.map(|s| label_((attr![for=id], s))).unwrap_or_default(),
                         hint.map(|s| custom_("text-input-hint", s))
                             .unwrap_or_default(),
                         error
                             .map(|s| custom_("text-input-error", s.to_string()))
                             .unwrap_or_default(),
-                        div_(input_(__![
+                        div_(input_(attr![
                             id=id,
                             name=id,
                             type="text",
@@ -79,7 +79,7 @@ fn layout(child: impl Into<Node>) -> Node {
 }
 
 fn css_reset() -> Node {
-    custom_("css-reset", __![@css=include_str!("./reset.css")])
+    custom_("css-reset", attr![@css=include_str!("./reset.css")])
 }
 
 fn main() {

@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 /// An HTML Attribute
 ///
-/// You will generally be using the [attribute list builder](crate::__) to create HTML attributes
+/// You will generally be using the [attribute list builder](crate::a) to create HTML attributes
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Attribute {
     /// A boolean attribute (e.g. `<input hidden>`
@@ -95,29 +95,29 @@ impl Display for Attribute {
 
 /// Creates a `Vec` with the given [attributes](crate::Attribute)
 ///
-/// `__!` allows `Vec<Attribute>` to be defined using similar syntax as you would to define a list
+/// `attr!` allows `Vec<Attribute>` to be defined using similar syntax as you would to define a list
 /// of attributes in HTML.
 ///
 /// The macro has a single form:
 /// ```
-/// use toph::__;
-/// let list = __![class="my-class", async, checked, id="my-id"];
+/// use toph::attr;
+/// let list = attr![class="my-class", async, checked, id="my-id"];
 /// ```
 ///
 /// You may have a trailing comma:
 ///
 /// ```
-/// use toph::__;
-/// let list = __![hidden,];
+/// use toph::attr;
+/// let list = attr![hidden,];
 /// ```
 ///
 /// The attribute key must be a valid rust identifier. This means that `data-*` attributes must be
 /// written as `data_*` because the dash (`-`) cannot be part of a rust identifier.
 ///
 /// ```
-/// use toph::__;
-/// // let list = __![data-custom="true"]; // Syntax error
-/// let list = __![data_custom="true"];
+/// use toph::attr;
+/// // let list = attr![data-custom="true"]; // Syntax error
+/// let list = attr![data_custom="true"];
 /// ```
 ///
 /// The attribute value can be either:
@@ -127,24 +127,23 @@ impl Display for Attribute {
 /// Using a non  non `'static` string slice will cause a borrow-checker error:
 ///
 /// ```
-/// use toph::__;
+/// use toph::attr;
 ///
 /// let string_slice = "hello";
 /// let heap_allocated_string = "world".to_string();
 /// let reference_to_heap_allocated_string = &heap_allocated_string;
 ///
-/// let list = __![class=string_slice]; // OK
-/// let list = __![class=heap_allocated_string]; // OK
-/// // let list = __![class=reference_to_heap_allocated_string];
+/// let list = attr![class=string_slice]; // OK
+/// let list = attr![class=heap_allocated_string]; // OK
+/// // let list = attr![class=reference_to_heap_allocated_string];
 /// // Error: borrowed value does not live long enough
 /// ```
 #[macro_export]
-macro_rules! __ {
+macro_rules! attr {
     ($($input:tt)*) => {{
         $crate::attr_impl!([] -> $($input)*)
     }}
 }
-
 // # Macro Implementation details:
 //
 // This uses a technique called pushdown accumulation
@@ -154,21 +153,21 @@ macro_rules! __ {
 //
 // Consider this invocation:
 // ```
-// __![async, class = "hidden", checked]
+// attr![async, class = "hidden", checked]
 // ```
 // This is the trace:
 //
 // ```
-// expanding `__! { async, class = "hidden", checked }`
-// to `{ $crate :: __! ([] -> async, class = "hidden", checked) }`
+// expanding `attr! { async, class = "hidden", checked }`
+// to `{ $crate :: attr_impl! ([] -> async, class = "hidden", checked) }`
 //
-// expanding `__! { [] -> async, class = "hidden", checked }`
-// to `$crate :: __! ([$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked)`
+// expanding `attr_impl! { [] -> async, class = "hidden", checked }`
+// to `$crate :: attr_impl! ([$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked)`
 //
-// expanding `__! { [$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked }`
-// to `$crate :: __! ([crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked)`
+// expanding `attr_impl! { [$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked }`
+// to `$crate :: attr_impl! ([crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked)`
 //
-// expanding `__! { [crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked }`
+// expanding `attr_impl! { [crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked }`
 // to `[crate::Attribute::new_boolean(stringify!(async)), crate::Attribute::new(stringify!(class), "hidden"), $crate :: Attribute :: new_boolean(stringify! (checked))].to_vec()`
 // ```
 //

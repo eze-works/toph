@@ -1,21 +1,20 @@
 //! Build HTML documents in Rust
 //!
 //! ```
-//! use toph::{__, tag::*};
+//! use toph::{attr, tag::*};
 //!
 //! let navigation = [("Home", "/"), ("Posts", "/posts")];
 //! let doc = [
 //!     doctype_(),
-//!     html_((
-//!         __![lang="en"],
+//!     html_((attr![lang="en"],
 //!         [
 //!             head_(title_("My Webpage")),
 //!             body_([
-//!                 ul_((
-//!                     __![id="navigation"],
+//!                 ul_((attr![id="navigation"],
 //!                     navigation.into_iter().map(|(caption, url)| {
-//!                         li_(a_((__![href=url], caption)))
-//!                     }).collect::<Vec<_>>()
+//!                         li_(a_((attr![href=url], caption)))
+//!                     })
+//!                     .collect::<Vec<_>>()
 //!                 )),
 //!                 h1_("My Webpage")
 //!             ])

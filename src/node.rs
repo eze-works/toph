@@ -128,8 +128,8 @@ impl_node_for_array_of_nodes!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::attr;
     use crate::node::tag::*;
-    use crate::__;
 
     #[track_caller]
     fn assert_html(node: impl Into<Node>, expected: &str) {
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn testing() {
-        let huh = __![];
+        let huh = attr![];
         println!("{:?}", huh);
     }
 
@@ -158,51 +158,51 @@ mod tests {
 
         // literal attribute values can be used with unsafe sinks
         assert_html(
-            span_(__![onclick = "something"]),
+            span_(attr![onclick = "something"]),
             r#"<span onclick="something"></span>"#,
         );
         // non-literal attribute values cannot be used with unsafe sinks
-        assert_html(span_(__![onclick = String::new()]), "<span></span>");
+        assert_html(span_(attr![onclick = String::new()]), "<span></span>");
 
         // literal urls can include any scheme
         assert_html(
-            span_(__![src = "javascript:boom"]),
+            span_(attr![src = "javascript:boom"]),
             r#"<span src="javascript:boom"></span>"#,
         );
 
         // non-literal urls may only use safe schemes
         assert_html(
-            span_(__![src = String::from("javascript:")]),
+            span_(attr![src = String::from("javascript:")]),
             "<span></span>",
         );
         assert_html(
-            span_(__![src = String::from("mailto:a.com")]),
+            span_(attr![src = String::from("mailto:a.com")]),
             r#"<span src="mailto:a.com"></span>"#,
         );
 
         // boolean attributes are supported
-        assert_html(span_(__![async]), "<span async></span>");
+        assert_html(span_(attr![async]), "<span async></span>");
 
         // mix of regular & boolean attributes
         assert_html(
-            span_(__![async, class = "hidden", checked]),
+            span_(attr![async, class = "hidden", checked]),
             r#"<span async class="hidden" checked></span>"#,
         );
         assert_html(
-            span_(__![class = "hidden", async, id = "id"]),
+            span_(attr![class = "hidden", async, id = "id"]),
             r#"<span class="hidden" async id="id"></span>"#,
         );
 
         // optional comma at the end of attribute list
-        assert_html(span_(__![async,]), "<span async></span>");
+        assert_html(span_(attr![async,]), "<span async></span>");
         assert_html(
-            span_(__![class = "class",]),
+            span_(attr![class = "class",]),
             r#"<span class="class"></span>"#,
         );
 
         // data-* attributes are supported
         assert_html(
-            span_(__![data_custom = "hello"]),
+            span_(attr![data_custom = "hello"]),
             r#"<span data-custom="hello"></span>"#,
         );
     }
@@ -211,21 +211,21 @@ mod tests {
     fn including_assets() {
         // css is included if there is a head element
         assert_html(
-            [html_([head_(title_([])), body_(__![@css="some css"])])],
+            [html_([head_(title_([])), body_(attr![@css="some css"])])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
         assert_html(
-            [html_(body_(__![@css="some css"]))],
+            [html_(body_(attr![@css="some css"]))],
             "<html><body></body></html>",
         );
 
         // js is included if there is a body element
         assert_html(
-            [html_(body_((__![@js="some js"], span_([]))))],
+            [html_(body_((attr![@js="some js"], span_([]))))],
             "<html><body><span></span><script>some js</script></body></html>",
         );
         assert_html(
-            [html_(span_(__![@js="some js"]))],
+            [html_(span_(attr![@js="some js"]))],
             "<html><span></span></html>",
         );
     }

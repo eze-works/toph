@@ -46,25 +46,25 @@
 //!
 //! ```
 //!
-//! You can pass in a [list of attributes](crate::__):
+//! You can pass in a [list of attributes](crate::attr):
 //!
 //! ```
-//! use toph::{__, tag::*};
-//! span_(__![class="card", hidden]);
+//! use toph::{attr, tag::*};
+//! span_(attr![class="card", hidden]);
 //! ```
 //!
 //! You can pass both of the above if you place them in a tuple
 //!
 //! ```
-//! use toph::{__, tag::*};
+//! use toph::{attr, tag::*};
 //!
 //! span_((
-//!     __![class="card",hidden],
+//!     attr![class="card",hidden],
 //!     "hello"
 //! ));
 //!
 //! span_((
-//!     __![class="card",hidden],
+//!     attr![class="card",hidden],
 //!     [
 //!         div_([]),
 //!         span_([]),
@@ -83,19 +83,19 @@
 //!
 //! - Owned strings are appropriately encoded in HTML, attribute and URL contexts:
 //! ```
-//! use toph::{__, tag::*};
+//! use toph::{attr, tag::*};
 //!
 //! let xss_attr_attempt = String::from(r#"" onclick="alert(1)""#);
 //! let xss_attempt = String::from(r#"><script>alert(1)"#);
 //! let url = String::from("/path with space");
 //!
 //! let mut span = span_((
-//!     __![class=xss_attr_attempt],
+//!     attr![class=xss_attr_attempt],
 //!     xss_attempt
 //! ));
 //!
 //! let mut anchor = a_((
-//!     __![href=url],
+//!     attr![href=url],
 //!     "A link"
 //! ));
 //!
@@ -116,17 +116,17 @@
 //! Notably, none of the event attributes (`on*`) are on this list.
 //!
 //! ```
-//! use toph::{__, tag::*};
+//! use toph::{attr, tag::*};
 //!
 //! let user_input = String::from("alert(1)");
-//! let mut html = button_(__![onclick=user_input]);
+//! let mut html = button_(attr![onclick=user_input]);
 //! assert_eq!(
 //!     html.write_to_string(),
 //!     r#"<button></button>"# // the attribute is ignored
 //! );
 //!
 //! // You can still set any atribute you want using `'static` string slices
-//! let mut html = button_(__![onclick="alert(1)"]);
+//! let mut html = button_(attr![onclick="alert(1)"]);
 //! assert_eq!(
 //!     html.write_to_string(),
 //!     r#"<button onclick="alert(1)"></button>"#
@@ -137,16 +137,16 @@
 //! whitelist of allowed schemes. Notably, this excludes `javascript:`
 //!
 //! ```
-//! use toph::{__, tag::*};
+//! use toph::{attr, tag::*};
 //!
 //!
-//! let mut html = a_(__![href=String::from("mailto:a.com")]);
+//! let mut html = a_(attr![href=String::from("mailto:a.com")]);
 //! assert_eq!(
 //!     html.write_to_string(),
 //!     r#"<a href="mailto:a.com"></a>"#
 //! );
 //!
-//! let mut html = a_(__![href=String::from("javascript:alert(1)")]);
+//! let mut html = a_(attr![href=String::from("javascript:alert(1)")]);
 //! assert_eq!(
 //!     html.write_to_string(),
 //!     "<a></a>"
