@@ -27,7 +27,7 @@ pub struct ModularSpacing(String);
 pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
     custom_("t-stack")
         .set(child)
-        .css(include_str!("css/stack.css"))
+        .stylesheet(include_str!("css/stack.css"))
         .var("t-stack-space", &gap.into().0)
 }
 
@@ -35,14 +35,13 @@ pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
 pub fn container(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
     custom_("t-container")
         .set(child)
-        .css(include_str!("css/container.css"))
+        .stylesheet(include_str!("css/container.css"))
         .var("t-container-padding", &padding.into().0)
 }
-
 
 /// A container whose child elements are horizontally centered
 pub fn center(child: impl Into<Node>) -> Node {
     custom_("t-center")
         .set(child)
-        .css(include_str!("css/center.css"))
+        .stylesheet(include_str!("css/center.css"))
 }

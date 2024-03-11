@@ -23,7 +23,7 @@
 //!                             li_.set(a_.with(attr![href=url]).set(caption))
 //!                         }).collect::<Vec<_>>()
 //!                     ),
-//!                 h1_.css("h1 { text-decoration: underline; }")
+//!                 h1_.stylesheet("h1 { text-decoration: underline; }")
 //!                     .set("My Webpage")
 //!             ])
 //!         ])
@@ -151,13 +151,13 @@
 //! let css = format!("p {{ font-size: {}; }}", user_input);
 //!
 //! // This does not compile
-//! // let mut html = html_.set([ head_, p_.css(&css)]);
+//! // let mut html = html_.set([ head_, p_.stylesheet(&css)]);
 //!
 //! // Neither does this. good try though
-//! // let mut html = html_.set([ head_, p_.css(css.leak())]);
+//! // let mut html = html_.set([ head_, p_.stylesheet(css.leak())]);
 //!
 //! // this compiles .. but won't actually do anything
-//! let mut html = html_.set([ head_, p_.css(css)]);
+//! let mut html = html_.set([ head_, p_.stylesheet(css)]);
 //! assert_eq!(
 //!   html.write_to_string(false),
 //!   "<html><head></head><p></p></html>"
@@ -167,7 +167,7 @@
 //! let css = "p { font-size: var(--font-size); }";
 //! let mut html = html_.set([
 //!     head_,
-//!     p_.css(css).var("font-size", user_input),
+//!     p_.stylesheet(css).var("font-size", user_input),
 //! ]);
 //! assert_eq!(
 //!   html.write_to_string(true),

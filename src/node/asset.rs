@@ -2,6 +2,6 @@
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Asset {
-    Css(&'static str),
+    StyleSheet(&'static str),
     JavaScript(&'static str),
 }

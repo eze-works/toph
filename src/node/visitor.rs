@@ -298,7 +298,7 @@ impl NodeVisitor for &mut SnippetCollector {
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         for asset in el.assets.iter_mut() {
             match asset {
-                Asset::Css(css) => {
+                Asset::StyleSheet(css) => {
                     self.css.insert(css);
                 }
                 Asset::JavaScript(js) => {

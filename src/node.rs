@@ -101,24 +101,22 @@ impl Node {
         self
     }
 
-    /// Links a css snippet to the Node
+    /// Links an inline css stylesheet to the Node
     ///
-    /// The CSS snippet will be included as a `<style>` element when this Node is in a tree with
+    /// The stylesheet will be included verbatim in a `<style>` element when this Node is in a tree with
     /// both `<html>` & `<head>` tags
-    ///
-    /// The contents of the snippet are included verbatim.
     ///
     /// # Example
     ///
     /// ```
     /// use toph::{tag::*};
     ///
-    /// let mut html = div_.css("div { border: 1px solid black; }");
+    /// let mut html = div_.stylesheet("div { border: 1px solid black; }");
     /// assert_eq!(html.write_to_string(false), "<div></div>");
     ///
     /// let mut html = html_.set([
     ///     head_,
-    ///     div_.css("div { border: 1px solid black; }")
+    ///     div_.stylesheet("div { border: 1px solid black; }")
     /// ]);
     /// assert_eq!(
     ///     html.write_to_string(false),
@@ -129,10 +127,10 @@ impl Node {
     ///
     /// CSS snippets are de-duplicated; Including the same snippet multiple times  will
     /// still result in a single `<style>` element
-    pub fn css(mut self, css: impl Into<Cow<'static, str>>) -> Node {
+    pub fn stylesheet(mut self, css: impl Into<Cow<'static, str>>) -> Node {
         if let Self::Element(ref mut el) = self {
             if let Cow::Borrowed(s) = css.into() {
-                el.assets.push(asset::Asset::Css(s));
+                el.assets.push(asset::Asset::StyleSheet(s));
             }
         }
         self
@@ -187,11 +185,11 @@ impl Node {
     /// let mut html = html_.set([
     ///     head_,
     ///     body_.set([
-    ///         div_.css(css)
+    ///         div_.stylesheet(css)
     ///             .var("text-color", "white")
     ///             .var("div-color", "black"),
     ///
-    ///         div_.css(css)
+    ///         div_.stylesheet(css)
     ///             .var("text-color", "brown")
     ///             .var("div-color", "pink"),
     ///     ])
@@ -393,21 +391,21 @@ mod tests {
     fn including_assets() {
         // css is prepended to the head element
         assert_html(
-            [html_.set([head_.set(title_), body_.css("some css")])],
+            [html_.set([head_.set(title_), body_.stylesheet("some css")])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
         // css is added if when head element is empty
         assert_html(
-            [html_.set([head_, body_.css("some css")])],
+            [html_.set([head_, body_.stylesheet("some css")])],
             r#"<html><head><style>some css</style></head><body></body></html>"#,
         );
         // no css is included when head is absent
         assert_html(
-            [html_.set(body_.css("some css"))],
+            [html_.set(body_.stylesheet("some css"))],
             "<html><body></body></html>",
         );
         // no css is included when html is absent
-        assert_html([body_.css("some css")], "<body></body>");
+        assert_html([body_.stylesheet("some css")], "<body></body>");
 
         // js is appended to the body element
         assert_html(

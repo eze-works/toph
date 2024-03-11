@@ -3,7 +3,7 @@ use toph::{attr, layout::*, tag::*, Node};
 
 fn stub() -> Node {
     let css = ".stub { width: 50px; height: 50px; background-color: black }";
-    div_.css(css).with(attr![class = "stub"])
+    div_.stylesheet(css).with(attr![class = "stub"])
 }
 
 fn main() {
