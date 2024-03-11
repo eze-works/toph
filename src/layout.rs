@@ -1,15 +1,8 @@
-//! Css Layout primitives
+//! Composable CSS Layout primitives
 //!
-//! Source: <https://every-layout.dev>
+//! Sources: <https://every-layout.dev>
 
-use crate::{attr, tag::*, Node};
-
-fn spacing(level: u8) -> String {
-    if level == 0 {
-        return String::new();
-    }
-    format!("{}rem", 0.325 * 1.5f64.powi(level as i32))
-}
+use crate::{tag::*, Node};
 
 impl From<u8> for ModularSpacing {
     fn from(value: u8) -> Self {
@@ -29,10 +22,30 @@ impl From<u16> for Measure {
 /// Expresses the spacing between elements as modular scale based on a line height of 1.5
 pub struct ModularSpacing(String);
 
-/// Expresses the measure (or width) of elements as a multiple of character width in the given
+/// Expresses the measure (or width) of elements as a multiple of character width in current font.
 pub struct Measure(String);
 
 /// A container with children that are evenly spaced out vertically
+///
+/// ```text
+///   x no gap
+/// +---+
+/// |   |
+/// +---+
+///   ^
+///   | gap
+///   v
+/// +---+
+/// |   |
+/// +---+
+///   ^
+///   | gap
+///   v
+/// +---+
+/// |   |
+/// +---+
+///   x no gap
+/// ```
 pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
     custom_("t-stack")
         .set(child)
@@ -40,24 +53,28 @@ pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
         .var("t-stack-space", &gap.into().0)
 }
 
-/// A simple padded box
-pub fn container(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
-    custom_("t-container")
-        .set(child)
-        .stylesheet(include_str!("css/container.css"))
-        .var("t-container-padding", &padding.into().0)
-}
-
-/// A container whose child elements are horizontally centered
-pub fn center(child: impl Into<Node>) -> Node {
-    custom_("t-center")
-        .set(child)
-        .stylesheet(include_str!("css/center.css"))
-}
-
-/// A group of elements evenly spaced out and laid out horizontally
+/// A container with children that are evenly spaced out horizontally
+///
+///
+/// ```text
+/// +---+           +---+           +---+
+/// |   | <- gap -> |   | <- gap -> |   |
+/// +---+           +---+           +---+
+/// ```
 ///
 /// The elements may wrap
+///
+/// ```text
+/// +---+           +---+           +---+
+/// |   | <- gap -> |   | <- gap -> |   |
+/// +---+           +---+           +---+
+///   ^
+///   | gap
+///   v
+/// +---+
+/// |   | ...
+/// +---+
+/// ```
 pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
     custom_("t-cluster")
         .set(child)
@@ -65,8 +82,66 @@ pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
         .var("t-cluster-gap", &gap.into().0)
 }
 
-/// A container whose elements switch from a horizontal layout to a vertical one at the given
+/// A simple padded box
+///
+/// ```text
+/// +-----------+
+/// |///////////|
+/// |//content//|
+/// |///////////|
+/// +-----------+
+/// ```
+pub fn padded(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
+    custom_("t-container")
+        .set(child)
+        .stylesheet(include_str!("css/padded.css"))
+        .var("t-padded-padding", &padding.into().0)
+}
+
+/// A container whose child elements are horizontally centered
+///
+/// ```text
+///             +---+
+///             |   |
+///             +---+
+///             +---+
+/// <---------->|   |<----------->
+///             +---+
+///             +---+
+///             |   |
+///             +---+
+/// ```
+pub fn center(child: impl Into<Node>) -> Node {
+    custom_("t-center")
+        .set(child)
+        .stylesheet(include_str!("css/center.css"))
+}
+
+/// A container whose elements switch from a horizontal layout to a vertical one at the given width
 /// threshold
+///
+///
+/// The layout goes from this:
+///  
+/// ```text
+/// +---+  +---+  +---+
+/// |   |  |   |  |   |
+/// +---+  +---+  +---+
+/// ```
+///
+/// To this;
+///
+/// ```text
+/// +---+
+/// |   |
+/// +---+
+/// +---+
+/// |   |
+/// +---+
+/// +---+
+/// |   |
+/// +---+
+/// ```
 pub fn switcher(
     gap: impl Into<ModularSpacing>,
     threshold: impl Into<Measure>,

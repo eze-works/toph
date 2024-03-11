@@ -1,0 +1,4 @@
+t-padded {
+  display: block;
+  padding: var(--t-padded-padding);
+}

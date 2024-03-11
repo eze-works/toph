@@ -4,6 +4,7 @@
 //! - Link [css](crate::Node::css) & [javascript](crate::Node::with_js) snippets to HTML
 //! elements, such that those snippets only appear if the linked element is displayed.
 //!
+//! The crate also implements [a set of layout primitives](crate::layout) so you don't have to
 //!
 //! ## Example
 //!
