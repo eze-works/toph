@@ -1,7 +1,7 @@
 //! An API for building  HTML documents.
 //!
 //! - [Safely](#xss-prevention) set attributes and content on HTML elements.
-//! - Link [css](crate::Node::css) & [javascript](crate::Node::with_js) snippets to HTML
+//! - Link [css](crate::Node::stylesheet) & [javascript](crate::Node::js) snippets to HTML
 //! elements, such that those snippets only appear if the linked element is displayed.
 //!
 //! The crate also implements [a set of layout primitives](crate::layout) so you don't have to
@@ -197,4 +197,4 @@ mod encode;
 pub mod layout;
 mod node;
 
-pub use node::{attribute::Attribute, tag, Element, Node, Text};
+pub use node::{tag, Element, Fragment, Node, Text};

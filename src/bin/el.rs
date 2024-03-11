@@ -16,9 +16,9 @@ fn main() {
                 stack(
                     5,
                     [
-                        container(1, stack(1, [stub(), stub(), stub()])),
-                        container(1, stack(4, [stub(), stub(), stub()])),
-                        container(1, stack(6, [stub(), stub(), stub()])),
+                        padded(1, stack(1, [stub(), stub(), stub()])),
+                        padded(1, stack(4, [stub(), stub(), stub()])),
+                        padded(1, stack(6, [stub(), stub(), stub()])),
                     ],
                 ),
                 h1_.set("Center"),
@@ -39,6 +39,10 @@ fn main() {
                 ),
                 h1_.set("Switcher"),
                 switcher(4, 60, [stub(), stub(), stub(), stub()]),
+                h1_.set("Cover"),
+                cover(stub(), None, None, Some(50)),
+                cover(stub(), Some(stub()), None, None),
+                cover(stub(), Some(stub()), Some(stub()), None),
             ]),
         ]),
     ]

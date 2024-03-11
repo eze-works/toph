@@ -2,7 +2,7 @@
 //!
 //! Sources: <https://every-layout.dev>
 
-use crate::{tag::*, Node};
+use crate::{attr, tag::*, Node};
 
 impl From<u8> for ModularSpacing {
     fn from(value: u8) -> Self {
@@ -101,20 +101,95 @@ pub fn padded(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Nod
 /// A container whose child elements are horizontally centered
 ///
 /// ```text
-///             +---+
-///             |   |
-///             +---+
-///             +---+
-/// <---------->|   |<----------->
-///             +---+
-///             +---+
-///             |   |
-///             +---+
+/// +------------------------------+
+/// |            +---+             |
+/// |            |   |             |
+/// |            +---+             |
+/// |            +---+             |
+/// |<---------->|   |<----------->|
+/// |            +---+             |
+/// |            +---+             |
+/// |            |   |             |
+/// |            +---+             |
+/// +------------------------------+
 /// ```
 pub fn center(child: impl Into<Node>) -> Node {
     custom_("t-center")
         .set(child)
         .stylesheet(include_str!("css/center.css"))
+}
+
+/// A container that vertically centers its main element within the viewport
+///
+///
+/// ```text
+/// +-----------------+
+/// |                 |
+/// |                 |
+/// |+--------------++|
+/// ||               ||
+/// || main          ||
+/// ||               ||
+/// |+--------------++|
+/// |                 |
+/// |                 |
+/// +-----------------+
+/// ```
+///
+/// You can optionally add header and/or footer elements
+///
+/// ```text
+/// +-----------------+
+/// | +-------------+ |
+/// | | header      | |
+/// | +-------------+ |
+/// |                 |
+/// |                 |
+/// |                 |
+/// |+--------------++|
+/// ||               ||
+/// || main          ||
+/// ||               ||
+/// |+--------------++|
+/// |                 |
+/// |                 |
+/// |                 |
+/// | +-------------+ |
+/// | | footer      | |
+/// | +-------------+ |
+/// +-----------------+
+/// ```
+///
+/// The last argument sets the height of the container as a percentage of the viewport width. It
+/// defaults to 100.
+///
+/// The header, footer and main arguments must correspond to exactly one HTML Element.
+///
+/// So for example, this won't give you what you expect because when a list of Nodes is converted
+/// into a single one, it is actually an HTML [fragment](crate::Fragment).
+/// ```
+/// use toph::{tag::*, layout::cover};
+///
+/// let nope = cover([
+///     span_,
+///     span_,
+///     span_
+/// ].into(), None, None, None);
+/// ```
+pub fn cover(
+    main: Node,
+    header: Option<Node>,
+    footer: Option<Node>,
+    cover_width: Option<u8>,
+) -> Node {
+    let header = header.map(|h| h.with(attr![class = "t-cover-header"]));
+    let footer = footer.map(|f| f.with(attr![class = "t-cover-footer"]));
+    let main = main.with(attr![class = "t-cover-main"]);
+    let percent = cover_width.unwrap_or(100);
+    custom_("t-cover")
+        .var("t-cover-percent", &format!("{}vh", percent))
+        .set([header.into(), main, footer.into()])
+        .stylesheet(include_str!("css/cover.css"))
 }
 
 /// A container whose elements switch from a horizontal layout to a vertical one at the given width

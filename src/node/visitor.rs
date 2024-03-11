@@ -1,4 +1,4 @@
-use super::{asset::Asset, attribute::Attribute, tag::*, Element, Node, Text};
+use super::{asset::Asset, tag::*, Element, Node, Text};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fmt;
@@ -168,7 +168,8 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
-        write!(self.html, "{}", Attribute::write_to_string(&el.attributes))?;
+        write!(self.html, "{}", el.attributes)?;
+        write!(self.html, "{}", el.variables)?;
         write!(self.html, ">{}", self.newline())?;
         if !el.is_void() {
             self.increment_indent();
@@ -216,7 +217,8 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "<{}", el.tag)?;
-        write!(self.html, "{}", Attribute::write_to_string(&el.attributes))?;
+        write!(self.html, "{}", el.attributes)?;
+        write!(self.html, "{}", el.variables)?;
         write!(self.html, ">")?;
         Ok(())
     }

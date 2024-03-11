@@ -1,141 +1,129 @@
 use crate::{allowlist, encode};
 use std::borrow::Cow;
-use std::fmt::Write;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Display;
 
-/// An HTML Attribute
-///
-/// You will generally be using the [attribute list builder](crate::attr) to create HTML attributes
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Attribute {
-    /// A boolean attribute (e.g. `<input hidden>`
-    Bool(Bool),
-    /// A regular attribute (e.g. `<span class="something"></span>`)
-    Regular(Regular),
-    /// An Inline CSS custom variable definition
-    Variable(Variable),
+/// HTML Attribute map
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AttributeMap {
+    boolean: BTreeSet<&'static str>,
+    regular: BTreeMap<&'static str, Cow<'static, str>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct Bool(&'static str);
+const SPACE_SEPARATED: [&str; 12] = [
+    "accesskey",
+    "blocking",
+    "class",
+    "for",
+    "headers",
+    "itemprop",
+    "itemref",
+    "itemtype",
+    "ping",
+    "rel",
+    "sandbox",
+    "sizes",
+];
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub struct Regular(&'static str, Cow<'static, str>);
+const COMMA_SEPARATED: [&str; 2] = ["accept", "imagesrcset"];
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub struct Variable(&'static str, String);
+impl AttributeMap {
+    /// Create a new attribute map
+    pub const fn new() -> Self {
+        Self {
+            regular: BTreeMap::new(),
+            boolean: BTreeSet::new(),
+        }
+    }
 
-impl Attribute {
-    /// Creates a new regular attribute with a key & value.
+    /// Add a new HTML attribute.
     ///
-    /// If the value is not a `'static` string slice, it will be attribute encoded
-    pub fn new_regular(key: &'static str, value: impl Into<Cow<'static, str>>) -> Self {
-        let key = key.trim();
-        let value = value.into();
-        let attribute = match value {
-            v @ Cow::Borrowed(_) => Attribute::Regular(Regular(key, v)),
-            v @ Cow::Owned(_) => {
+    /// Boolean attributes can be inserted by setting the value to `None`
+    ///
+    /// For regular attributes, if the value is not a `'static` string slice, it will be attribute
+    /// encoded
+    ///
+    /// Attribute values that are comma or space-separated according to the WHATWG spec are
+    /// appended if they are inserted more than once
+    ///
+    /// For all other attributes, existing values will be overwritten if the attribute appears more
+    /// than once
+    pub fn insert(&mut self, key: &'static str, value: Option<Cow<'static, str>>) {
+        // Don't care to store empty keys
+        if key.is_empty() || key.chars().all(|c| c.is_ascii_whitespace()) {
+            return;
+        }
+
+        match value {
+            None => {
+                self.boolean.insert(key);
+            }
+            Some(value @ Cow::Borrowed(_)) => {
+                self.insert_or_modify(key, value);
+            }
+            Some(v @ Cow::Owned(_)) => {
                 let value = v.into_owned();
-                let value = value.trim();
 
                 if allowlist::URL_ATTRIBUTES.contains(&key) {
-                    if let Some(url) = encode::url(value) {
-                        Attribute::Regular(Regular(key, url.into()))
-                    } else {
-                        Attribute::Regular(Regular("", "".into()))
+                    if let Some(url) = encode::url(&value) {
+                        self.insert_or_modify(key, url.into());
                     }
                 } else if allowlist::ALLOWED_ATTR_NAMES.contains(&key) || key.starts_with("data_") {
-                    let encoded_value = encode::attr(value);
-                    Attribute::Regular(Regular(key, encoded_value.into()))
-                } else {
-                    Attribute::Regular(Regular("", "".into()))
-                }
-            }
-        };
-
-        attribute
-    }
-
-    /// Creates a new boolean attribute
-    pub fn new_boolean(key: &'static str) -> Self {
-        Attribute::Bool(Bool(key))
-    }
-
-    /// Creates a new css variable definitions
-    ///
-    /// The value is always attribute encoded  
-    pub fn new_variable(name: &'static str, value: &str) -> Self {
-        Attribute::Variable(Variable(name, encode::attr(value)))
-    }
-
-    /// Formats and writes a list of attributes to a `String`
-    pub fn write_to_string<'a, I>(attributes: I) -> String
-    where
-        I: IntoIterator<Item = &'a Attribute>,
-    {
-        let attributes = attributes.into_iter();
-
-        let mut css_variables = vec![];
-
-        let mut result = String::new();
-
-        // Looping through the list of attributes:
-        //
-        // * Empty keys are skipped. This permits users to use `unwrap_or_default()`-like patterns
-        // when conditionally setting attributes
-        //
-        // * data-* attributes have to be expressed in Rust as data_ because dashes are not valid
-        // Rust identifiers. When displaying attributes, the underscore is converted back to a
-        // dash.
-        //
-        // * CSS variables need to be collected so they can be written as one style="..." attribute
-        for attr in attributes {
-            match attr {
-                Attribute::Bool(Bool(b)) => {
-                    if b.is_empty() {
-                        continue;
-                    }
-                    // data-* attributes have to be written as data_*
-                    if b.contains('_') {
-                        write!(result, " {}", b.replace('_', "-")).unwrap();
-                    } else {
-                        write!(result, " {}", b).unwrap();
-                    }
-                }
-                Attribute::Regular(Regular(k, v)) => {
-                    if k.is_empty() {
-                        continue;
-                    }
-                    if k.contains('_') {
-                        write!(result, " {}", k.replace('_', "-")).unwrap();
-                    } else {
-                        write!(result, " {}", k).unwrap();
-                    }
-                    write!(result, "=\"{}\"", v).unwrap();
-                }
-                Attribute::Variable(var) => {
-                    if var.0.is_empty() {
-                        continue;
-                    }
-                    css_variables.push(var);
+                    let encoded_value = encode::attr(&value);
+                    self.insert_or_modify(key, encoded_value.into());
                 }
             }
         }
+    }
 
-        let mut definitions = String::new();
-        for Variable(k, v) in css_variables {
-            write!(definitions, "--{}: {};", k, v).unwrap();
+    fn insert_or_modify(&mut self, key: &'static str, value: Cow<'static, str>) {
+        if SPACE_SEPARATED.contains(&key) {
+            if let Some(existing) = self.regular.get_mut(key) {
+                *existing += " ";
+                *existing += value;
+            } else {
+                self.regular.insert(key, value);
+            }
+        } else if COMMA_SEPARATED.contains(&key) {
+            if let Some(existing) = self.regular.get_mut(key) {
+                *existing += ",";
+                *existing += value;
+            } else {
+                self.regular.insert(key, value);
+            }
+        } else {
+            self.regular.insert(key, value);
         }
-        if !definitions.is_empty() {
-            write!(result, " style=\"{}\"", definitions).unwrap();
-        }
-        result
+    }
+
+    #[cfg(test)]
+    fn is_empty(&self) -> bool {
+        self.regular.is_empty() && self.boolean.is_empty()
     }
 }
 
-/// Creates a `Vec` with the given [attributes](crate::Attribute)
-///
-/// `attr!` allows `Vec<Attribute>` to be defined using similar syntax as you would to define a list
-/// of attributes in HTML.
+impl Display for AttributeMap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (k, v) in self.regular.iter() {
+            if k.starts_with("data_") {
+                write!(f, " {}=\"{}\"", k.replace('_', "-"), v)?;
+            } else {
+                write!(f, " {}=\"{}\"", k, v)?;
+            }
+        }
+
+        for k in self.boolean.iter() {
+            if k.starts_with("_") {
+                write!(f, " {}", k.replace('_', "-"))?;
+            } else {
+                write!(f, " {}", k)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Attribute list builder
 ///
 /// The macro has a single form:
 /// ```
@@ -151,7 +139,8 @@ impl Attribute {
 /// ```
 ///
 /// The attribute key must be a valid rust identifier. This means that `data-*` attributes must be
-/// written as `data_*` because the dash (`-`) cannot be part of a rust identifier.
+/// written in Rust code as `data_*`. When printed to a string `data_*` attributes are convereted
+/// to `data-` as you would expect.
 ///
 /// ```
 /// use toph::attr;
@@ -228,22 +217,133 @@ macro_rules! attr {
 macro_rules! attr_impl {
     // Match regular key/value attributes
     ([$($attr:expr),*] -> $name:ident = $value:expr , $($rest:tt)*) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_regular(stringify!($name), $value)] -> $($rest)*)
+        $crate::attr_impl!([$($attr,)* (stringify!($name), Some(<std::borrow::Cow<'static, str>>::from($value)))] -> $($rest)*)
     };
     ([$($attr:expr),*] -> $name:ident = $value:expr) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_regular(stringify!($name), $value)] ->)
+        $crate::attr_impl!([$($attr,)* (stringify!($name), Some(<std::borrow::Cow<'static, str>>::from($value)))] ->)
     };
 
     // Match boolean attributes
     ([$($attr:expr),*] -> $name:ident , $($rest:tt)*) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_boolean(stringify!($name))] -> $($rest)*)
+        $crate::attr_impl!([$($attr,)* (stringify!($name), <Option<std::borrow::Cow<'static, str>>>::None)] -> $($rest)*)
     };
     ([$($attr:expr),*] -> $name:ident) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_boolean(stringify!($name))] ->)
+        $crate::attr_impl!([$($attr,)* (stringify!($name), <Option<std::borrow::Cow<'static, str>>>::None)] ->)
     };
 
     // Create vec once there is no more input to consume
     ([$($attr:expr),*] ->) => {
-        <Vec<$crate::Attribute>>::from([$($attr,)*])
+        [$($attr,)*]
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tag::*;
+
+    #[test]
+    fn inserting_comma_separated_attributes() {
+        let mut map = AttributeMap::new();
+        map.insert("accept", Some("video/*".into()));
+        map.insert("accept", Some("audio/*".into()));
+
+        assert_eq!(
+            map.regular.get("accept").expect("key should be set"),
+            "video/*,audio/*",
+        );
+    }
+
+    #[test]
+    fn inserting_space_separated_attributes() {
+        let mut map = AttributeMap::new();
+        map.insert("for", Some("form1".into()));
+        map.insert("for", Some("form2".into()));
+        map.insert("for", Some("form3".into()));
+
+        assert_eq!(
+            map.regular.get("for").expect("key should be set"),
+            "form1 form2 form3"
+        );
+    }
+
+    #[test]
+    fn inserting_regular_attributes() {
+        let mut map = AttributeMap::new();
+        map.insert("id", Some("id1".into()));
+        map.insert("id", Some("id2".into()));
+        map.insert("id", Some("id3".into()));
+
+        assert_eq!(map.regular.get("id").expect("key should be set"), "id3");
+    }
+
+    #[test]
+    fn inserting_boolean_attributes() {
+        let mut map = AttributeMap::new();
+        map.insert("garbage", None);
+        map.insert("something", None);
+
+        assert_eq!(map.boolean, BTreeSet::from(["garbage", "something"]));
+    }
+
+    #[test]
+    fn borrowed_attributes_are_stored_verbatim() {
+        let mut map = AttributeMap::new();
+
+        // literal values do not go through a whitelist or get encoded
+        map.insert("onclick", Some("look at this \" mess".into()));
+
+        assert_eq!(
+            map.regular.get("onclick").expect("key should be set"),
+            "look at this \" mess"
+        );
+    }
+
+    #[test]
+    fn owned_attributes_are_encoded() {
+        let mut map = AttributeMap::new();
+        let owned = String::from("no mess\" here");
+        map.insert("class", Some(owned.into()));
+
+        assert_eq!(
+            map.regular.get("class").expect("key should be set"),
+            "no mess&quot; here"
+        );
+    }
+
+    #[test]
+    fn owned_attributes_get_filtered_out_using_allowlist() {
+        let mut map = AttributeMap::new();
+        let owned = String::from("boom");
+        map.insert("onclick", Some(owned.into()));
+
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn owned_url_attributes_get_filtered_out_using_allowlist() {
+        let mut map = AttributeMap::new();
+        let owned = String::from("javascript:alert(1)");
+        map.insert("src", Some(owned.into()));
+
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn empty_key() {
+        let mut map = AttributeMap::new();
+        map.insert("", None);
+        map.insert("  ", None);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn data_attributes() {
+        let mut html = span_.with(attr![data_hello = "hi"]);
+
+        assert_eq!(
+            html.write_to_string(false),
+            r#"<span data-hello="hi"></span>"#
+        );
+    }
 }

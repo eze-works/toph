@@ -10,14 +10,17 @@
 //! [`attr`](crate::attr#js--css-snippets) macro
 
 use super::*;
+use attribute::AttributeMap;
+use variable::CSSVariableMap;
 
 /// Creates an HTML Node with a custom tag name.
 pub fn custom_(tag: &'static str) -> Node {
     Node::Element(Element {
         tag,
         child: None,
-        attributes: vec![],
+        attributes: AttributeMap::new(),
         assets: vec![],
+        variables: CSSVariableMap::new(),
     })
 }
 
@@ -33,9 +36,10 @@ macro_rules! impl_tag {
             #[doc = $doc]
             pub const [<$tag _>]: Node = Node::Element(Element {
                 tag: stringify!($tag),
-                attributes: vec![],
+                attributes: AttributeMap::new(),
                 assets: vec![],
                 child: None,
+                variables: CSSVariableMap::new()
             });
         }
     }
@@ -45,26 +49,29 @@ macro_rules! impl_tag {
 #[allow(non_upper_case_globals)]
 pub const doctype_: Node = Node::Element(Element {
     tag: "!DOCTYPE html",
-    attributes: vec![],
+    attributes: AttributeMap::new(),
     child: None,
     assets: vec![],
+    variables: CSSVariableMap::new(),
 });
 
 // script_ & style_ tag constants are omitted from the public API
 #[allow(non_upper_case_globals)]
 pub(crate) const script_: Node = Node::Element(Element {
     tag: "script",
-    attributes: vec![],
+    attributes: AttributeMap::new(),
     assets: vec![],
     child: None,
+    variables: CSSVariableMap::new(),
 });
 
 #[allow(non_upper_case_globals)]
 pub(crate) const style_: Node = Node::Element(Element {
     tag: "style",
-    attributes: vec![],
+    attributes: AttributeMap::new(),
     child: None,
     assets: vec![],
+    variables: CSSVariableMap::new(),
 });
 
 #[rustfmt::skip]

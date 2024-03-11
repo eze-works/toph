@@ -1,31 +1,33 @@
 mod asset;
 pub mod attribute;
 pub mod tag;
+mod variable;
 pub mod visitor;
 
 use crate::encode;
-use attribute::Attribute;
+use attribute::AttributeMap;
 use std::borrow::Cow;
 use std::io;
+use variable::CSSVariableMap;
 
 /// An HTML Node
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Node {
     /// See [`Element`]
     Element(Element),
     /// See [`Text`]
     Text(Text),
-    // See [`Fragment`]
-    #[doc(hidden)]
+    /// See [`Fragment`]
     Fragment(Fragment),
 }
 
 /// An HTML element. All [tag functions](crate::tag) create an HTML node with this variant
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
     tag: &'static str,
-    attributes: Vec<attribute::Attribute>,
+    attributes: AttributeMap,
+    variables: CSSVariableMap,
     child: Option<Box<Node>>,
     assets: Vec<asset::Asset>,
 }
@@ -60,13 +62,26 @@ impl Default for Node {
 
 /// A text element. This is the variant created when a string is given as an argument to a tag
 /// function
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+///
+/// Calling the following methods on Node `Text` variant is a no-op:
+/// - [`Node::with`]
+/// - [`Node::stylesheet`]
+/// - [`Node::js`]
+/// - [`Node::var`]
+/// - [`Node::set`]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Text(Cow<'static, str>);
 
-// Fragment is a container for multiple `Node`s. It's the variant created with an array of
-// nodes is converted to a single node. It is an implementation detail.
-#[doc(hidden)]
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+/// A Fragment is a container for multiple `Node`s. It's the variant created with an array of
+/// nodes is converted to a single node.
+///
+/// Calling the following methods on Node `Fragment` variant is a no-op:
+/// - [`Node::with`]
+/// - [`Node::stylesheet`]
+/// - [`Node::js`]
+/// - [`Node::var`]
+/// - [`Node::set`]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Fragment(Vec<Node>);
 
 impl Node {
@@ -84,19 +99,65 @@ impl Node {
         visitor::visit_nodes(self, writer)
     }
 
-    /// Sets attributes for the element.
+    /// Sets HTML attributes
     ///
-    /// A mix of boolean & regular attributes can be set
+    /// A mix of boolean & regular attributes can be set. You can call this method multiple times
     ///
     /// ```
     /// use toph::{attr, tag::*};
-    /// span_.with(attr![class="card", hidden]);
+    /// let mut s = span_
+    ///     .with(attr![class="card", hidden])
+    ///     .with(attr![id="hello"]);
+    ///
+    /// assert_eq!(
+    ///     s.write_to_string(false),
+    ///     r#"<span class="card" id="hello" hidden></span>"#
+    /// );
+    /// ```
+    ///
+    ///
+    /// ## Duplicates
+    ///
+    /// Generally, if an attribute appears twice, the last occurence wins
+    ///
+    /// ```
+    /// use toph::{attr, tag::*};
+    /// assert_eq!(
+    ///     span_.with(attr![id="one", id="two"]).write_to_string(false),
+    ///     r#"<span id="two"></span>"#
+    /// );
+    /// ```
+    ///
+    /// For space-separated attributes (e..g `class`), occurences are combined with a space;
+    ///
+    /// ```
+    /// use toph::{attr, tag::*};
+    /// assert_eq!(
+    ///     span_.with(attr![class="one", class="two"]).write_to_string(false),
+    ///     r#"<span class="one two"></span>"#
+    /// );
+    /// ```
+    ///
+    /// For comma-separated attributes (e.g. `accept`), occurences are combined with a comma;
+    ///
+    /// ```
+    /// use toph::{attr, tag::*};
+    ///
+    /// assert_eq!(
+    ///     span_.with(attr![accept="audio/*", accept="video/*"]).write_to_string(false),
+    ///     r#"<span accept="audio/*,video/*"></span>"#
+    /// );
     /// ```
     ///
     /// See the [attr](crate::attr) macro docs for details.
-    pub fn with(mut self, attributes: Vec<Attribute>) -> Node {
+    pub fn with<I>(mut self, attributes: I) -> Node
+    where
+        I: IntoIterator<Item = (&'static str, Option<Cow<'static, str>>)>,
+    {
         if let Self::Element(ref mut el) = self {
-            el.attributes = attributes;
+            for attr in attributes {
+                el.attributes.insert(attr.0, attr.1)
+            }
         }
         self
     }
@@ -204,9 +265,9 @@ impl Node {
     ///     </style>
     ///   </head>
     ///   <body>
-    ///     <div style="--text-color: white;--div-color: black;">
+    ///     <div style="--div-color: black;--text-color: white;">
     ///     </div>
-    ///     <div style="--text-color: brown;--div-color: pink;">
+    ///     <div style="--div-color: pink;--text-color: brown;">
     ///     </div>
     ///   </body>
     /// </html>
@@ -218,7 +279,7 @@ impl Node {
     /// - The value is always attribute encoded
     pub fn var(mut self, name: &'static str, value: &str) -> Node {
         if let Self::Element(ref mut el) = self {
-            el.attributes.push(Attribute::new_variable(name, value));
+            el.variables.insert(name, value)
         }
         self
     }
@@ -275,6 +336,12 @@ impl From<String> for Node {
     }
 }
 
+impl From<Option<Node>> for Node {
+    fn from(value: Option<Node>) -> Self {
+        value.unwrap_or_default()
+    }
+}
+
 macro_rules! impl_node_for_array_of_nodes {
     ($($n:expr),+) => {
         $(
@@ -314,12 +381,6 @@ mod tests {
     #[track_caller]
     fn assert_html(node: impl Into<Node>, expected: &str) {
         assert_eq!((&mut node.into()).write_to_string(false), expected);
-    }
-
-    #[test]
-    fn testing() {
-        let huh = attr![];
-        println!("{:?}", huh);
     }
 
     #[test]
@@ -366,11 +427,11 @@ mod tests {
         // mix of regular & boolean attributes
         assert_html(
             span_.with(attr![async, class = "hidden", checked]),
-            r#"<span async class="hidden" checked></span>"#,
+            r#"<span class="hidden" async checked></span>"#,
         );
         assert_html(
             span_.with(attr![class = "hidden", async, id = "id"]),
-            r#"<span class="hidden" async id="id"></span>"#,
+            r#"<span class="hidden" id="id" async></span>"#,
         );
 
         // optional comma at the end of attribute list
