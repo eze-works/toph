@@ -37,6 +37,8 @@ fn main() {
                         stub(),
                     ],
                 ),
+                h1_.set("Switcher"),
+                switcher(4, 60, [stub(), stub(), stub(), stub()]),
             ]),
         ]),
     ]

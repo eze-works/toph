@@ -20,8 +20,17 @@ impl From<u8> for ModularSpacing {
     }
 }
 
+impl From<u16> for Measure {
+    fn from(value: u16) -> Self {
+        Measure(format!("{}ch", value))
+    }
+}
+
 /// Expresses the spacing between elements as modular scale based on a line height of 1.5
 pub struct ModularSpacing(String);
+
+/// Expresses the measure (or width) of elements as a multiple of character width in the given
+pub struct Measure(String);
 
 /// A container with children that are evenly spaced out vertically
 pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
@@ -54,4 +63,18 @@ pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
         .set(child)
         .stylesheet(include_str!("css/cluster.css"))
         .var("t-cluster-gap", &gap.into().0)
+}
+
+/// A container whose elements switch from a horizontal layout to a vertical one at the given
+/// threshold
+pub fn switcher(
+    gap: impl Into<ModularSpacing>,
+    threshold: impl Into<Measure>,
+    child: impl Into<Node>,
+) -> Node {
+    custom_("t-switcher")
+        .set(child)
+        .stylesheet(include_str!("css/switcher.css"))
+        .var("t-switcher-gap", &gap.into().0)
+        .var("t-switcher-threshold", &threshold.into().0)
 }
