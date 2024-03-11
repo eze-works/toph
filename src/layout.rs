@@ -45,3 +45,13 @@ pub fn center(child: impl Into<Node>) -> Node {
         .set(child)
         .stylesheet(include_str!("css/center.css"))
 }
+
+/// A group of elements evenly spaced out and laid out horizontally
+///
+/// The elements may wrap
+pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
+    custom_("t-cluster")
+        .set(child)
+        .stylesheet(include_str!("css/cluster.css"))
+        .var("t-cluster-gap", &gap.into().0)
+}

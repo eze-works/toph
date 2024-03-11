@@ -23,6 +23,20 @@ fn main() {
                 ),
                 h1_.set("Center"),
                 center([stub()]),
+                h1_.set("Cluster"),
+                cluster(
+                    5,
+                    [
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                    ],
+                ),
             ]),
         ]),
     ]
