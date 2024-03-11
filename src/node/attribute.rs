@@ -1,6 +1,6 @@
 use crate::{allowlist, encode};
 use std::borrow::Cow;
-use std::fmt::Display;
+use std::fmt::Write;
 
 /// An HTML Attribute
 ///
@@ -8,45 +8,46 @@ use std::fmt::Display;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Attribute {
     /// A boolean attribute (e.g. `<input hidden>`
-    Bool(BooleanAttribute),
+    Bool(Bool),
     /// A regular attribute (e.g. `<span class="something"></span>`)
-    Regular(RegularAttribute),
-    /// Special attribute for storing css associated with a node.
-    Css(&'static str),
-    /// Special attribute for storing js associated with a node
-    Js(&'static str),
+    Regular(Regular),
+    /// An Inline CSS custom variable definition
+    Variable(Variable),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct BooleanAttribute(&'static str);
+pub struct Bool(&'static str);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub struct RegularAttribute(&'static str, Cow<'static, str>);
+pub struct Regular(&'static str, Cow<'static, str>);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Variable(&'static str, String);
 
 impl Attribute {
     /// Creates a new regular attribute with a key & value.
     ///
-    /// If the value is not a `'static` string slice, it will be html encoded
-    pub fn new(key: &'static str, value: impl Into<Cow<'static, str>>) -> Self {
+    /// If the value is not a `'static` string slice, it will be attribute encoded
+    pub fn new_regular(key: &'static str, value: impl Into<Cow<'static, str>>) -> Self {
         let key = key.trim();
         let value = value.into();
         let attribute = match value {
-            v @ Cow::Borrowed(_) => Attribute::Regular(RegularAttribute(key, v)),
+            v @ Cow::Borrowed(_) => Attribute::Regular(Regular(key, v)),
             v @ Cow::Owned(_) => {
                 let value = v.into_owned();
                 let value = value.trim();
 
                 if allowlist::URL_ATTRIBUTES.contains(&key) {
                     if let Some(url) = encode::url(value) {
-                        Attribute::Regular(RegularAttribute(key, url.into()))
+                        Attribute::Regular(Regular(key, url.into()))
                     } else {
-                        Attribute::Regular(RegularAttribute("", "".into()))
+                        Attribute::Regular(Regular("", "".into()))
                     }
                 } else if allowlist::ALLOWED_ATTR_NAMES.contains(&key) || key.starts_with("data_") {
                     let encoded_value = encode::attr(value);
-                    Attribute::Regular(RegularAttribute(key, encoded_value.into()))
+                    Attribute::Regular(Regular(key, encoded_value.into()))
                 } else {
-                    Attribute::Regular(RegularAttribute("", "".into()))
+                    Attribute::Regular(Regular("", "".into()))
                 }
             }
         };
@@ -56,40 +57,78 @@ impl Attribute {
 
     /// Creates a new boolean attribute
     pub fn new_boolean(key: &'static str) -> Self {
-        Attribute::Bool(BooleanAttribute(key))
+        Attribute::Bool(Bool(key))
     }
-}
 
-impl Display for Attribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Attribute::Bool(BooleanAttribute(b)) => {
-                if b.is_empty() {
-                    return Ok(());
-                }
+    /// Creates a new css variable definitions
+    ///
+    /// The value is always attribute encoded  
+    pub fn new_variable(name: &'static str, value: &str) -> Self {
+        Attribute::Variable(Variable(name, encode::attr(value)))
+    }
 
-                if b.contains("_") {
-                    write!(f, " {}", b.replace("_", "-"))?;
-                } else {
-                    write!(f, " {}", b)?;
+    /// Formats and writes a list of attributes to a `String`
+    pub fn write_to_string<'a, I>(attributes: I) -> String
+    where
+        I: IntoIterator<Item = &'a Attribute>,
+    {
+        let attributes = attributes.into_iter();
+
+        let mut css_variables = vec![];
+
+        let mut result = String::new();
+
+        // Looping through the list of attributes:
+        //
+        // * Empty keys are skipped. This permits users to use `unwrap_or_default()`-like patterns
+        // when conditionally setting attributes
+        //
+        // * data-* attributes have to be expressed in Rust as data_ because dashes are not valid
+        // Rust identifiers. When displaying attributes, the underscore is converted back to a
+        // dash.
+        //
+        // * CSS variables need to be collected so they can be written as one style="..." attribute
+        for attr in attributes {
+            match attr {
+                Attribute::Bool(Bool(b)) => {
+                    if b.is_empty() {
+                        continue;
+                    }
+                    // data-* attributes have to be written as data_*
+                    if b.contains('_') {
+                        write!(result, " {}", b.replace('_', "-")).unwrap();
+                    } else {
+                        write!(result, " {}", b).unwrap();
+                    }
                 }
-                Ok(())
+                Attribute::Regular(Regular(k, v)) => {
+                    if k.is_empty() {
+                        continue;
+                    }
+                    if k.contains('_') {
+                        write!(result, " {}", k.replace('_', "-")).unwrap();
+                    } else {
+                        write!(result, " {}", k).unwrap();
+                    }
+                    write!(result, "=\"{}\"", v).unwrap();
+                }
+                Attribute::Variable(var) => {
+                    if var.0.is_empty() {
+                        continue;
+                    }
+                    css_variables.push(var);
+                }
             }
-            Attribute::Regular(RegularAttribute(k, v)) => {
-                if k.is_empty() {
-                    return Ok(());
-                }
-
-                if k.contains("_") {
-                    write!(f, " {}", k.replace("_", "-"))?;
-                } else {
-                    write!(f, " {}", k)?;
-                }
-                write!(f, "=\"{}\"", v)?;
-                Ok(())
-            }
-            _ => Ok(()),
         }
+
+        let mut definitions = String::new();
+        for Variable(k, v) in css_variables {
+            write!(definitions, "--{}: {};", k, v).unwrap();
+        }
+        if !definitions.is_empty() {
+            write!(result, " style=\"{}\"", definitions).unwrap();
+        }
+        result
     }
 }
 
@@ -187,28 +226,12 @@ macro_rules! attr {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! attr_impl {
-    // Match the @css key
-    ([$($attr:expr),*] -> @css = $value:expr, $($rest:tt)*) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::Css($value)] -> $($rest)*)
-    };
-    ([$($attr:expr),*] -> @css = $value:expr) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::Css($value)] ->)
-    };
-
-    // Match the @js key
-    ([$($attr:expr),*] -> @js = $value:expr, $($rest:tt)*) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::Js($value)] -> $($rest)*)
-    };
-    ([$($attr:expr),*] -> @js = $value:expr) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::Js($value)] ->)
-    };
-
     // Match regular key/value attributes
     ([$($attr:expr),*] -> $name:ident = $value:expr , $($rest:tt)*) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new(stringify!($name), $value)] -> $($rest)*)
+        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_regular(stringify!($name), $value)] -> $($rest)*)
     };
     ([$($attr:expr),*] -> $name:ident = $value:expr) => {
-        $crate::attr_impl!([$($attr,)* $crate::Attribute::new(stringify!($name), $value)] ->)
+        $crate::attr_impl!([$($attr,)* $crate::Attribute::new_regular(stringify!($name), $value)] ->)
     };
 
     // Match boolean attributes

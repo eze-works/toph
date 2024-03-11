@@ -4,6 +4,10 @@
 //! tags they generate.
 //!
 //! You can also create an HTML element [with a custom tag name](crate::tag::custom_).
+//!
+//! Missing from this module are constants for the `_script` & `_style` elements. JavaScript & CSS
+//! snippets are set using [`Node::with`](crate::Node::with) and the
+//! [`attr`](crate::attr#js--css-snippets) macro
 
 use super::*;
 
@@ -13,6 +17,7 @@ pub fn custom_(tag: &'static str) -> Node {
         tag,
         child: None,
         attributes: vec![],
+        assets: vec![],
     })
 }
 
@@ -29,6 +34,7 @@ macro_rules! impl_tag {
             pub const [<$tag _>]: Node = Node::Element(Element {
                 tag: stringify!($tag),
                 attributes: vec![],
+                assets: vec![],
                 child: None,
             });
         }
@@ -41,6 +47,24 @@ pub const doctype_: Node = Node::Element(Element {
     tag: "!DOCTYPE html",
     attributes: vec![],
     child: None,
+    assets: vec![],
+});
+
+// script_ & style_ tag constants are omitted from the public API
+#[allow(non_upper_case_globals)]
+pub(crate) const script_: Node = Node::Element(Element {
+    tag: "script",
+    attributes: vec![],
+    assets: vec![],
+    child: None,
+});
+
+#[allow(non_upper_case_globals)]
+pub(crate) const style_: Node = Node::Element(Element {
+    tag: "style",
+    attributes: vec![],
+    child: None,
+    assets: vec![],
 });
 
 #[rustfmt::skip]
@@ -48,7 +72,7 @@ impl_tag![
     // main root
     html,
     // document metadata
-    base, head, link, meta, style, title,
+    base, head, link, meta, /*style,*/ title,
     // sectioning root
     body,
     // content sectioning
@@ -65,7 +89,7 @@ impl_tag![
     // svg and mathml
     svg, math,
     // scripting
-    canvas, noscript, script,
+    canvas, /* script, */ noscript, 
     // demarcating edits
     del, ins,
     // table content

@@ -34,7 +34,7 @@ pub fn attr(value: &str) -> String {
     if !value.contains('"') {
         return value.into();
     }
-    value.replace("\"", "&quot;")
+    value.replace('"', "&quot;")
 }
 
 // Url attribute values are encoded in the same way as regular attribute values except that they
@@ -63,7 +63,7 @@ pub fn url(input: &str) -> Option<String> {
 
             // For relative urls like `../../about.html`, extract that `../../` prefix
             let mut prefix = String::new();
-            if input.starts_with(".") {
+            if input.starts_with('.') {
                 for c in input.chars() {
                     if c == '.' {
                         prefix += ".";
@@ -75,7 +75,7 @@ pub fn url(input: &str) -> Option<String> {
                 }
             }
             // Disgard any leading `/`
-            prefix = prefix.trim_end_matches("/").to_string();
+            prefix = prefix.trim_end_matches('/').to_string();
 
             // Use a fake base to parse the relative url
             let fake = Url::parse("http://example.org").expect("valid url");
@@ -100,7 +100,7 @@ pub fn url(input: &str) -> Option<String> {
         }
     };
 
-    Some(url.replace("\"", "&quot;"))
+    Some(url.replace('"', "&quot;"))
 }
 
 #[cfg(test)]

@@ -1,5 +1,6 @@
-use super::{attribute::Attribute, tag::*, Element, Node, Text};
+use super::{asset::Asset, attribute::Attribute, tag::*, Element, Node, Text};
 use std::borrow::Cow;
+use std::collections::HashSet;
 use std::fmt;
 use std::io;
 use std::mem;
@@ -13,7 +14,7 @@ enum Tag<'n> {
 // nodes
 pub fn include_assets(node: &mut Node) {
     // Get assets
-    let mut collector = AssetCollector::new();
+    let mut collector = SnippetCollector::new();
     visit_nodes(node, &mut collector).expect("collecting assets does not fail");
 
     let mut style = None;
@@ -30,11 +31,11 @@ pub fn include_assets(node: &mut Node) {
         .map(|c| style_.set(c))
         .collect::<Vec<_>>();
 
-    if script_fragments.len() > 0 {
+    if !script_fragments.is_empty() {
         script = Some(script_fragments.into());
     }
 
-    if style_fragments.len() > 0 {
+    if !style_fragments.is_empty() {
         style = Some(style_fragments.into());
     }
 
@@ -158,7 +159,7 @@ impl<W: fmt::Write> HtmlStringWriter<W> {
         }
 
         let replacement = format!("\n{}", self.current_indent());
-        Cow::Owned(text.trim_end().replace("\n", &replacement))
+        Cow::Owned(text.trim_end().replace('\n', &replacement))
     }
 }
 
@@ -167,11 +168,7 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
-        if el.attributes.len() > 0 {
-            for attr in &el.attributes {
-                write!(self.html, "{}", attr)?;
-            }
-        }
+        write!(self.html, "{}", Attribute::write_to_string(&el.attributes))?;
         write!(self.html, ">{}", self.newline())?;
         if !el.is_void() {
             self.increment_indent();
@@ -219,11 +216,7 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "<{}", el.tag)?;
-        if el.attributes.len() > 0 {
-            for attr in &el.attributes {
-                write!(self.html, "{}", attr)?;
-            }
-        }
+        write!(self.html, "{}", Attribute::write_to_string(&el.attributes))?;
         write!(self.html, ">")?;
         Ok(())
     }
@@ -256,7 +249,7 @@ impl AssetInserter {
     }
 }
 
-impl<'s> NodeVisitor for AssetInserter {
+impl NodeVisitor for AssetInserter {
     type Error = ();
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
@@ -265,6 +258,8 @@ impl<'s> NodeVisitor for AssetInserter {
                 if let Some(mut old) = el.child.take() {
                     *old = [node, mem::take(&mut old)].into();
                     el.child = Some(old);
+                } else {
+                    el.child = Some(Box::new(node));
                 }
             }
         } else if el.tag == "body" {
@@ -272,6 +267,8 @@ impl<'s> NodeVisitor for AssetInserter {
                 if let Some(mut old) = el.child.take() {
                     *old = [mem::take::<Node>(&mut old), node].into();
                     el.child = Some(old);
+                } else {
+                    el.child = Some(Box::new(node));
                 }
             }
         }
@@ -280,34 +277,33 @@ impl<'s> NodeVisitor for AssetInserter {
     }
 }
 
-// A visitor that collects all css & js declarations from the Node tree
-pub struct AssetCollector {
-    pub css: Vec<&'static str>,
-    pub js: Vec<&'static str>,
+// A visitor that collects all css & js snippets from the Node tree
+pub struct SnippetCollector {
+    pub css: HashSet<&'static str>,
+    pub js: HashSet<&'static str>,
 }
 
-impl AssetCollector {
+impl SnippetCollector {
     pub fn new() -> Self {
         Self {
-            css: Vec::default(),
-            js: Vec::default(),
+            css: HashSet::new(),
+            js: HashSet::new(),
         }
     }
 }
 
-impl NodeVisitor for &mut AssetCollector {
+impl NodeVisitor for &mut SnippetCollector {
     type Error = ();
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
-        for attr in &el.attributes {
-            match attr {
-                Attribute::Js(js) => {
-                    self.js.push(js);
+        for asset in el.assets.iter_mut() {
+            match asset {
+                Asset::Css(css) => {
+                    self.css.insert(css);
                 }
-                Attribute::Css(css) => {
-                    self.css.push(css);
+                Asset::JavaScript(js) => {
+                    self.js.insert(js);
                 }
-                _ => {}
             }
         }
         Ok(())

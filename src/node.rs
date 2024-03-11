@@ -1,3 +1,4 @@
+mod asset;
 pub mod attribute;
 pub mod tag;
 pub mod visitor;
@@ -26,6 +27,7 @@ pub struct Element {
     tag: &'static str,
     attributes: Vec<attribute::Attribute>,
     child: Option<Box<Node>>,
+    assets: Vec<asset::Asset>,
 }
 
 impl Element {
@@ -91,23 +93,134 @@ impl Node {
     /// span_.with(attr![class="card", hidden]);
     /// ```
     ///
-    /// There is special syntax for attaching Javascript & css snippets to a node.
-    /// ```
-    /// use toph::{attr, tag::*};
-    /// span_.with(attr![@css=".btn { background-color: black; }"]);
-    /// span_.with(attr![@js="console.log('hello world')"]);
-    /// ```
-    ///
-    /// Javascript & Css snippets are expected to be string literals. For anything other than
-    /// trivial styles & scripts you can use [`include_str!`]
-    ///
     /// See the [attr](crate::attr) macro docs for details.
     pub fn with(mut self, attributes: Vec<Attribute>) -> Node {
-        match self {
-            Self::Element(ref mut el) => {
-                el.attributes = attributes;
+        if let Self::Element(ref mut el) = self {
+            el.attributes = attributes;
+        }
+        self
+    }
+
+    /// Links a css snippet to the Node
+    ///
+    /// The CSS snippet will be included as a `<style>` element when this Node is in a tree with
+    /// both `<html>` & `<head>` tags
+    ///
+    /// The contents of the snippet are included verbatim.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use toph::{tag::*};
+    ///
+    /// let mut html = div_.with_css("div { border: 1px solid black; }");
+    /// assert_eq!(html.write_to_string(false), "<div></div>");
+    ///
+    /// let mut html = html_.set([
+    ///     head_,
+    ///     div_.with_css("div { border: 1px solid black; }")
+    /// ]);
+    /// assert_eq!(
+    ///     html.write_to_string(false),
+    ///     "<html><head><style>div { border: 1px solid black; }</style></head><div></div></html>"
+    /// );
+    /// ```
+    /// # Note
+    ///
+    /// CSS snippets are de-duplicated; Including the same snippet multiple times  will
+    /// still result in a single `<style>` element
+    pub fn with_css(mut self, css: impl Into<Cow<'static, str>>) -> Node {
+        if let Self::Element(ref mut el) = self {
+            if let Cow::Borrowed(s) = css.into() {
+                el.assets.push(asset::Asset::Css(s));
             }
-            _ => {}
+        }
+        self
+    }
+
+    /// Links a JavaScript snippet to the Node
+    ///
+    /// The javascript snippet will be included as a `<script>` element when this Node is in a tree
+    /// with both `<html>` & `<body>` tags
+    ///
+    /// The contents of the snippet are included verbatim
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use toph::{tag::*};
+    ///
+    /// let mut html = div_.with_js("console.log()");
+    /// assert_eq!(html.write_to_string(false), "<div></div>");
+    ///
+    /// let mut html = html_.set([
+    ///     body_.set(div_.with_js("console.log()"))
+    /// ]);
+    ///
+    /// assert_eq!(
+    ///     html.write_to_string(false),
+    ///     "<html><body><div></div><script>console.log()</script></body></html>"
+    /// );
+    /// ```
+    ///
+    /// # Note:
+    ///
+    /// JavaScript snippets are de-duplicated; Including the same snippet multiple times  will
+    /// still result in a single `<script>` element
+    pub fn with_js(mut self, js: &'static str) -> Node {
+        if let Self::Element(ref mut el) = self {
+            el.assets.push(asset::Asset::JavaScript(js));
+        }
+        self
+    }
+
+    /// Define a CSS variable for this Node
+    ///
+    /// This is useful for "parameterizing" styles. You can call this method multiple times to
+    /// define additional variables.
+    ///
+    /// # Example
+    /// ```
+    /// use toph::{tag::*};
+    ///
+    /// let css = "div { color: var(--text-color); border: 1px solid var(--div-color); }";
+    /// let mut html = html_.set([
+    ///     head_,
+    ///     body_.set([
+    ///         div_.with_css(css)
+    ///             .var("text-color", "white")
+    ///             .var("div-color", "black"),
+    ///
+    ///         div_.with_css(css)
+    ///             .var("text-color", "brown")
+    ///             .var("div-color", "pink"),
+    ///     ])
+    /// ]);
+    ///
+    /// assert_eq!(
+    ///     html.write_to_string(true),
+    /// r#"<html>
+    ///   <head>
+    ///     <style>
+    ///       div { color: var(--text-color); border: 1px solid var(--div-color); }
+    ///     </style>
+    ///   </head>
+    ///   <body>
+    ///     <div style="--text-color: white;--div-color: black;">
+    ///     </div>
+    ///     <div style="--text-color: brown;--div-color: pink;">
+    ///     </div>
+    ///   </body>
+    /// </html>
+    /// "#)
+    /// ```
+    ///
+    /// # Notes:
+    /// - Double dashes are automatically prepended to the name when displayed
+    /// - The value is always attribute encoded
+    pub fn var(mut self, name: &'static str, value: &str) -> Node {
+        if let Self::Element(ref mut el) = self {
+            el.attributes.push(Attribute::new_variable(name, value));
         }
         self
     }
@@ -141,14 +254,11 @@ impl Node {
     /// ]);
     /// ```
     pub fn set(mut self, child: impl Into<Node>) -> Node {
-        match self {
-            Self::Element(ref mut el) => {
-                el.child = Some(Box::new(child.into()));
-                if el.tag == "html" {
-                    visitor::include_assets(&mut self);
-                }
+        if let Self::Element(ref mut el) = self {
+            el.child = Some(Box::new(child.into()));
+            if el.tag == "html" {
+                visitor::include_assets(&mut self);
             }
-            _ => {}
         }
         self
     }
@@ -281,24 +391,43 @@ mod tests {
 
     #[test]
     fn including_assets() {
-        // css is included if there is a head element
+        // css is prepended to the head element
         assert_html(
-            [html_.set([head_.set(title_), body_.with(attr![@css="some css"])])],
+            [html_.set([head_.set(title_), body_.with_css("some css")])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
+        // css is added if when head element is empty
         assert_html(
-            [html_.set(body_.with(attr![@css="some css"]))],
+            [html_.set([head_, body_.with_css("some css")])],
+            r#"<html><head><style>some css</style></head><body></body></html>"#,
+        );
+        // no css is included when head is absent
+        assert_html(
+            [html_.set(body_.with_css("some css"))],
             "<html><body></body></html>",
         );
+        // no css is included when html is absent
+        assert_html([body_.with_css("some css")], "<body></body>");
 
-        // js is included if there is a body element
+        // js is appended to the body element
         assert_html(
-            [html_.set(body_.with(attr![@js="some js"]).set(span_))],
+            [html_.set(body_.with_js("some js").set(span_))],
             "<html><body><span></span><script>some js</script></body></html>",
         );
+
+        // js is added when body element is empty
         assert_html(
-            [html_.set(span_.with(attr![@js="some js"]))],
+            [html_.set(body_.with_js("some js"))],
+            "<html><body><script>some js</script></body></html>",
+        );
+
+        // no js is added when body is absent
+        assert_html(
+            [html_.set(span_.with_js("some js"))],
             "<html><span></span></html>",
         );
+
+        // no js is added when html is absent
+        assert_html([body_.with_js("some js")], "<body></body>");
     }
 }

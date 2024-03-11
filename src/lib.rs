@@ -1,10 +1,9 @@
 //! An API for building  HTML documents.
 //!
-//! - [Print the resulting `Node` to a string](crate::Node::write_to_string) or [write it to an
-//! `io::Write` instance](crate::Node::write).
 //! - [Safely](#xss-prevention) set attributes and content on HTML elements.
-//! - [Link css & javascript snippets to HTML elements](crate::Node::with), such that those
-//! snippets only appear if the linked element is displayed.
+//! - Link [css](crate::Node::with_css) & [javascript](crate::Node::with_js) snippets to HTML
+//! elements, such that those snippets only appear if the linked element is displayed.
+//!
 //!
 //! ## Example
 //!
@@ -24,7 +23,7 @@
 //!                             li_.set(a_.with(attr![href=url]).set(caption))
 //!                         }).collect::<Vec<_>>()
 //!                     ),
-//!                 h1_.with(attr![@css="h1 { text-decoration: underline; }"])
+//!                 h1_.with_css("h1 { text-decoration: underline; }")
 //!                     .set("My Webpage")
 //!             ])
 //!         ])
@@ -69,8 +68,8 @@
 //! advantage of this by allowing `'static` string slices to appear anywhere in the HTML un-encoded
 //! since by their nature they cannot contain user input.
 //!
-//! For owned strings, a handful of measures are taken to protect against Cross-site scripting
-//! attacks (XSS):
+//! A handful of additional measures are taken to protect against Cross-site scripting attacks
+//! (XSS):
 //!
 //! - Owned strings are appropriately encoded in HTML, attribute and URL contexts:
 //! ```
@@ -121,8 +120,8 @@
 //! );
 //! ```
 //!
-//! - A subset of the safe attributes are recognized as URL attributes. For these, there is a
-//! whitelist of allowed schemes. Notably, this excludes `javascript:`
+//! - For owned strings, A subset of the safe attributes are recognized as URL attributes. For
+//! these, there is a whitelist of allowed schemes. Notably, this excludes `javascript:`.
 //!
 //! ```
 //! use toph::{attr, tag::*};
@@ -141,6 +140,51 @@
 //! );
 //! ```
 //!
+//! - JavaScript & CSS snippets can only be set using `'static` string slices.
+//!   - It is frequently useful to parameterize styles though, so the [`var`](crate::Node::var)
+//!   method is provided.
+//!
+//! ```
+//! use toph::{tag::*};
+//!
+//! let user_input = "1rem";
+//! let css = format!("p {{ font-size: {}; }}", user_input);
+//!
+//! // This does not compile
+//! // let mut html = html_.set([ head_, p_.with_css(&css)]);
+//!
+//! // Neither does this. good try though
+//! // let mut html = html_.set([ head_, p_.with_css(css.leak())]);
+//!
+//! // this compiles .. but won't actually do anything
+//! let mut html = html_.set([ head_, p_.with_css(css)]);
+//! assert_eq!(
+//!   html.write_to_string(false),
+//!   "<html><head></head><p></p></html>"
+//! );
+//!
+//! // The only way to set snippets is through literal strings.
+//! let css = "p { font-size: var(--font-size); }";
+//! let mut html = html_.set([
+//!     head_,
+//!     p_.with_css(css).var("font-size", user_input),
+//! ]);
+//! assert_eq!(
+//!   html.write_to_string(true),
+//!   r#"<html>
+//!   <head>
+//!     <style>
+//!       p { font-size: var(--font-size); }
+//!     </style>
+//!   </head>
+//!   <p style="--font-size: 1rem;">
+//!   </p>
+//! </html>
+//!"#);
+//!
+//! ```
+//!
+//!
 //! [^1]: [`String::leak`] does allow you to get a `&'static mut str`. However even that won't work
 //! with this crate because the APIs expect a shared reference.
 
@@ -149,6 +193,7 @@
 
 mod allowlist;
 mod encode;
+mod every_layout;
 mod node;
 
 pub use node::{attribute::Attribute, tag, Element, Node, Text};

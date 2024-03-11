@@ -1,0 +1,17 @@
+el-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+el-stack>* {
+  margin-block: 0;
+}
+
+el-stack>*+* {
+  margin-block-start: var(--el-stack-space);
+}
+
+el-stack:only-child {
+  block-size: 100%;
+}
