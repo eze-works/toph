@@ -3,20 +3,19 @@
 //! Source: <https://every-layout.dev>
 
 mod stack;
-use crate::{attr, tag::*, Node};
 
-fn spacing(level: u8) -> f64 {
+pub use stack::stack;
+
+fn spacing(level: u8) -> String {
     if level == 0 {
-        return 0.0;
+        return String::new();
     }
-    0.325 * 1.5f64.powi(level as i32)
+    format!("{}rem", 0.325 * 1.5f64.powi(level as i32))
 }
 
-fn sizing(level: u8) -> f64 {
+fn sizing(level: u8) -> String {
     if level == 0 {
-        return 0.0;
+        return String::new();
     }
-    3.0 * 1.5f64.powi(level as i32)
+    format!("{}rem", 3.0 * 1.5f64.powi(level as i32))
 }
-
-pub struct Sizing(u8);

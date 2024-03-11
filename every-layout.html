@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      el-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      
+      el-stack>* {
+        margin-block: 0;
+      }
+      
+      el-stack>*+* {
+        margin-block-start: var(--el-stack-space);
+      }
+      
+      el-stack:only-child {
+        block-size: 100%;
+      }
+    </style>
+    <style>
+      .box { border: 1px solid black; width: 100px; height: 10px; }
+    </style>
+    <title>
+      Every Layout
+    </title>
+  </head>
+  <body>
+    <h1>
+      Stack
+    </h1>
+    <el-stack style="--el-stack-space: 2.4679687500000003rem;">
+      <hr>
+      <el-stack style="--el-stack-space: 0.48750000000000004rem;">
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+      </el-stack>
+      <hr>
+      <el-stack style="--el-stack-space: 0.7312500000000001rem;">
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+      </el-stack>
+      <hr>
+      <el-stack style="--el-stack-space: 1.096875rem;">
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+      </el-stack>
+      <hr>
+      <el-stack style="--el-stack-space: 1.6453125rem;">
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+        <div class="box">
+        </div>
+      </el-stack>
+    </el-stack>
+  </body>
+</html>

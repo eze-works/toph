@@ -113,12 +113,12 @@ impl Node {
     /// ```
     /// use toph::{tag::*};
     ///
-    /// let mut html = div_.with_css("div { border: 1px solid black; }");
+    /// let mut html = div_.css("div { border: 1px solid black; }");
     /// assert_eq!(html.write_to_string(false), "<div></div>");
     ///
     /// let mut html = html_.set([
     ///     head_,
-    ///     div_.with_css("div { border: 1px solid black; }")
+    ///     div_.css("div { border: 1px solid black; }")
     /// ]);
     /// assert_eq!(
     ///     html.write_to_string(false),
@@ -129,7 +129,7 @@ impl Node {
     ///
     /// CSS snippets are de-duplicated; Including the same snippet multiple times  will
     /// still result in a single `<style>` element
-    pub fn with_css(mut self, css: impl Into<Cow<'static, str>>) -> Node {
+    pub fn css(mut self, css: impl Into<Cow<'static, str>>) -> Node {
         if let Self::Element(ref mut el) = self {
             if let Cow::Borrowed(s) = css.into() {
                 el.assets.push(asset::Asset::Css(s));
@@ -150,11 +150,11 @@ impl Node {
     /// ```
     /// use toph::{tag::*};
     ///
-    /// let mut html = div_.with_js("console.log()");
+    /// let mut html = div_.js("console.log()");
     /// assert_eq!(html.write_to_string(false), "<div></div>");
     ///
     /// let mut html = html_.set([
-    ///     body_.set(div_.with_js("console.log()"))
+    ///     body_.set(div_.js("console.log()"))
     /// ]);
     ///
     /// assert_eq!(
@@ -167,7 +167,7 @@ impl Node {
     ///
     /// JavaScript snippets are de-duplicated; Including the same snippet multiple times  will
     /// still result in a single `<script>` element
-    pub fn with_js(mut self, js: &'static str) -> Node {
+    pub fn js(mut self, js: &'static str) -> Node {
         if let Self::Element(ref mut el) = self {
             el.assets.push(asset::Asset::JavaScript(js));
         }
@@ -187,11 +187,11 @@ impl Node {
     /// let mut html = html_.set([
     ///     head_,
     ///     body_.set([
-    ///         div_.with_css(css)
+    ///         div_.css(css)
     ///             .var("text-color", "white")
     ///             .var("div-color", "black"),
     ///
-    ///         div_.with_css(css)
+    ///         div_.css(css)
     ///             .var("text-color", "brown")
     ///             .var("div-color", "pink"),
     ///     ])
@@ -393,41 +393,41 @@ mod tests {
     fn including_assets() {
         // css is prepended to the head element
         assert_html(
-            [html_.set([head_.set(title_), body_.with_css("some css")])],
+            [html_.set([head_.set(title_), body_.css("some css")])],
             r#"<html><head><style>some css</style><title></title></head><body></body></html>"#,
         );
         // css is added if when head element is empty
         assert_html(
-            [html_.set([head_, body_.with_css("some css")])],
+            [html_.set([head_, body_.css("some css")])],
             r#"<html><head><style>some css</style></head><body></body></html>"#,
         );
         // no css is included when head is absent
         assert_html(
-            [html_.set(body_.with_css("some css"))],
+            [html_.set(body_.css("some css"))],
             "<html><body></body></html>",
         );
         // no css is included when html is absent
-        assert_html([body_.with_css("some css")], "<body></body>");
+        assert_html([body_.css("some css")], "<body></body>");
 
         // js is appended to the body element
         assert_html(
-            [html_.set(body_.with_js("some js").set(span_))],
+            [html_.set(body_.js("some js").set(span_))],
             "<html><body><span></span><script>some js</script></body></html>",
         );
 
         // js is added when body element is empty
         assert_html(
-            [html_.set(body_.with_js("some js"))],
+            [html_.set(body_.js("some js"))],
             "<html><body><script>some js</script></body></html>",
         );
 
         // no js is added when body is absent
         assert_html(
-            [html_.set(span_.with_js("some js"))],
+            [html_.set(span_.js("some js"))],
             "<html><span></span></html>",
         );
 
         // no js is added when html is absent
-        assert_html([body_.with_js("some js")], "<body></body>");
+        assert_html([body_.js("some js")], "<body></body>");
     }
 }
