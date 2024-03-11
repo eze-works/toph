@@ -3,16 +3,6 @@ pub const ALLOWED_URL_SCHEMES: [&str; 8] = [
     "http", "https", "mailto", "tel", "callto", "sms", "cid", "xmpp",
 ];
 
-// List of attributes that require url encoding
-pub const URL_ATTRIBUTES: [&str; 7] = [
-    "action",
-    "cite",
-    "data",
-    "formaction",
-    "href",
-    "poster",
-    "src",
-];
 
 // This crate only allows setting values on attributes that are considered "safe sinks". These
 // attributes treat their values as text and do not execute them. This excludes all the `on*` event

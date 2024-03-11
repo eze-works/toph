@@ -37,17 +37,14 @@ pub fn attr(value: &str) -> String {
     value.replace('"', "&quot;")
 }
 
-// Url attribute values are encoded in the same way as regular attribute values except that they
-// need to be percent encoded first.
-//
 // "Percent encoding a url" is not straightforward because the url has to be parsed then eeach part
 // percent-encoded according to specification.
 //
 // Thankfully, the `url` crate handles this.
-pub fn url(input: &str) -> Option<String> {
+pub fn url(input: &str, filter_scheme: bool) -> Option<String> {
     let url = match Url::parse(input) {
         Ok(u) => {
-            if !ALLOWED_URL_SCHEMES.contains(&u.scheme()) {
+            if filter_scheme && !ALLOWED_URL_SCHEMES.contains(&u.scheme()) {
                 return None;
             }
             u.to_string()
@@ -100,7 +97,7 @@ pub fn url(input: &str) -> Option<String> {
         }
     };
 
-    Some(url.replace('"', "&quot;"))
+    Some(url)
 }
 
 #[cfg(test)]
@@ -120,27 +117,30 @@ mod tests {
     }
 
     #[test]
-    fn encoding_url() {
+    fn percent_encoding() {
+        // Filtering schemes
+        assert_eq!(url("javascript:alert(1)", true), None);
         assert_eq!(
-            url("mailto:matt@example\".com"),
-            Some("mailto:matt@example&quot;.com".into())
+            url("javascript:alert(1)", false),
+            Some("javascript:alert(1)".into())
         );
-
-        assert_eq!(url("javascript:alert(1)"), None);
 
         // partial urls
-        assert_eq!(url("/ test/ path"), Some("/%20test/%20path".into()),);
+        assert_eq!(url("/ test/ path", true), Some("/%20test/%20path".into()),);
         assert_eq!(
-            url("../../ test/ path"),
+            url("../../ test/ path", true),
             Some("../../%20test/%20path".into()),
         );
-        assert_eq!(url("/test?key= val"), Some("/test?key=%20val".into()));
-        assert_eq!(url("/test#fragment"), Some("/test#fragment".into()));
+        assert_eq!(url("/test?key= val", true), Some("/test?key=%20val".into()));
+        assert_eq!(url("/test#fragment", true), Some("/test#fragment".into()));
         assert_eq!(
-            url("/test?key= val#fragment"),
+            url("/test?key= val#fragment", true),
             Some("/test?key=%20val#fragment".into())
         );
-        assert_eq!(url("?query=val"), Some("/?query=val".into()));
-        assert_eq!(url("#fragment space"), Some("/#fragment%20space".into()));
+        assert_eq!(url("?query=val", true), Some("/?query=val".into()));
+        assert_eq!(
+            url("#fragment space", true),
+            Some("/#fragment%20space".into())
+        );
     }
 }

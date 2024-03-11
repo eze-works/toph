@@ -11,7 +11,7 @@
 //! ```
 //! use toph::{attr, Node, tag::*};
 //!
-//! let navigation = [("Home", "/"), ("Posts", "/posts")];
+//! let navigation = [("Home", "/about me"), ("Posts", "/posts")];
 //! let mut doc = Node::from([
 //!     doctype_,
 //!     html_.with(attr![lang="en"])
@@ -45,7 +45,7 @@
 //!   <body>
 //!     <ul id="navigation">
 //!       <li>
-//!         <a href="/">
+//!         <a href="/about%20me">
 //!           Home
 //!         </a>
 //!       </li>

@@ -10,6 +10,7 @@ pub struct AttributeMap {
     regular: BTreeMap<&'static str, Cow<'static, str>>,
 }
 
+// List of attributes that are space separated
 const SPACE_SEPARATED: [&str; 12] = [
     "accesskey",
     "blocking",
@@ -25,7 +26,19 @@ const SPACE_SEPARATED: [&str; 12] = [
     "sizes",
 ];
 
+// List of attributes that are comma separated
 const COMMA_SEPARATED: [&str; 2] = ["accept", "imagesrcset"];
+
+// List of attributes that require url encoding
+const URL_ATTRIBUTES: [&str; 7] = [
+    "action",
+    "cite",
+    "data",
+    "formaction",
+    "href",
+    "poster",
+    "src",
+];
 
 impl AttributeMap {
     /// Create a new attribute map
@@ -55,20 +68,35 @@ impl AttributeMap {
         }
 
         match value {
+            // Boolean attributes are stored verbatim
             None => {
                 self.boolean.insert(key);
             }
+            // Borrowed values are url encoded if applicable
             Some(value @ Cow::Borrowed(_)) => {
+                let value = if URL_ATTRIBUTES.contains(&key) {
+                    encode::url(&value, false).map(|v| Cow::Owned(v))
+                } else {
+                    Some(value)
+                };
+
+                let Some(value) = value else { return };
+
                 self.insert_or_modify(key, value);
             }
+            // Owned values are url encoded (if applicable) and attribute encoded
             Some(v @ Cow::Owned(_)) => {
                 let value = v.into_owned();
 
-                if allowlist::URL_ATTRIBUTES.contains(&key) {
-                    if let Some(url) = encode::url(&value) {
-                        self.insert_or_modify(key, url.into());
-                    }
-                } else if allowlist::ALLOWED_ATTR_NAMES.contains(&key) || key.starts_with("data_") {
+                let value = if URL_ATTRIBUTES.contains(&key) {
+                    encode::url(&value, true)
+                } else {
+                    Some(value)
+                };
+
+                let Some(value) = value else { return };
+
+                if allowlist::ALLOWED_ATTR_NAMES.contains(&key) || key.starts_with("data_") {
                     let encoded_value = encode::attr(&value);
                     self.insert_or_modify(key, encoded_value.into());
                 }
@@ -282,20 +310,45 @@ mod tests {
         let mut map = AttributeMap::new();
         map.insert("garbage", None);
         map.insert("something", None);
+        map.insert("lol\"wut", None);
 
-        assert_eq!(map.boolean, BTreeSet::from(["garbage", "something"]));
+        assert_eq!(
+            map.boolean,
+            BTreeSet::from(["garbage", "something", "lol\"wut"])
+        );
     }
 
     #[test]
     fn borrowed_attributes_are_stored_verbatim() {
         let mut map = AttributeMap::new();
 
-        // literal values do not go through a whitelist or get encoded
+        // literal values do not get blacklisted or html attribute encoded
         map.insert("onclick", Some("look at this \" mess".into()));
-
         assert_eq!(
             map.regular.get("onclick").expect("key should be set"),
             "look at this \" mess"
+        );
+    }
+
+    #[test]
+    fn borrwed_url_attributes_are_percent_encoded() {
+        let mut map = AttributeMap::new();
+        map.insert("src", Some("/about me".into()));
+
+        assert_eq!(
+            map.regular.get("src").expect("key should be set"),
+            "/about%20me"
+        );
+    }
+
+    #[test]
+    fn borrowed_url_attributes_do_not_get_filtered_using_scheme() {
+        let mut map = AttributeMap::new();
+        map.insert("src", Some("javascript:alert()".into()));
+
+        assert_eq!(
+            map.regular.get("src").expect("key should be set"),
+            "javascript:alert()"
         );
     }
 
@@ -321,11 +374,10 @@ mod tests {
     }
 
     #[test]
-    fn owned_url_attributes_get_filtered_out_using_allowlist() {
+    fn owned_url_attributes_get_filtered_out_using_scheme() {
         let mut map = AttributeMap::new();
         let owned = String::from("javascript:alert(1)");
         map.insert("src", Some(owned.into()));
-
         assert!(map.is_empty());
     }
 
