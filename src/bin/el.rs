@@ -1,9 +1,9 @@
 use std::fs;
-use toph::{attr, every_layout::*, tag::*, Node};
+use toph::{attr, layout::*, tag::*, Node};
 
-fn container() -> Node {
-    let css = ".box { border: 1px solid black; width: 100px; height: 10px; }";
-    div_.css(css).with(attr![class = "box"])
+fn stub() -> Node {
+    let css = ".stub { width: 50px; height: 50px; background-color: black }";
+    div_.css(css).with(attr![class = "stub"])
 }
 
 fn main() {
@@ -16,12 +16,13 @@ fn main() {
                 stack(
                     5,
                     [
-                        stack(1, [container(), container(), container()]),
-                        stack(2, [container(), container(), container()]),
-                        stack(3, [container(), container(), container()]),
-                        stack(4, [container(), container(), container()]),
+                        container(1, stack(1, [stub(), stub(), stub()])),
+                        container(1, stack(4, [stub(), stub(), stub()])),
+                        container(1, stack(6, [stub(), stub(), stub()])),
                     ],
                 ),
+                h1_.set("Center"),
+                center([stub()]),
             ]),
         ]),
     ]

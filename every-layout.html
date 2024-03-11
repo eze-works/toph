@@ -2,26 +2,43 @@
 <html>
   <head>
     <style>
-      el-stack {
+      t-container {
+        display: block;
+        padding: var(--t-container-padding);
+      }
+    </style>
+    <style>
+      t-stack {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
       }
       
-      el-stack>* {
+      t-stack>* {
         margin-block: 0;
       }
       
-      el-stack>*+* {
-        margin-block-start: var(--el-stack-space);
+      t-stack>*+* {
+        margin-block-start: var(--t-stack-space);
       }
       
-      el-stack:only-child {
+      t-stack:only-child {
         block-size: 100%;
+      }
+      
+      t-stack> :nth-child(3) {
+        margin-block-end: auto;
       }
     </style>
     <style>
-      .box { border: 1px solid black; width: 100px; height: 10px; }
+      .stub { width: 50px; height: 50px; background-color: black }
+    </style>
+    <style>
+      t-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
     </style>
     <title>
       Every Layout
@@ -31,43 +48,44 @@
     <h1>
       Stack
     </h1>
-    <el-stack style="--el-stack-space: 2.4679687500000003rem;">
-      <hr>
-      <el-stack style="--el-stack-space: 0.48750000000000004rem;">
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-      </el-stack>
-      <hr>
-      <el-stack style="--el-stack-space: 0.7312500000000001rem;">
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-      </el-stack>
-      <hr>
-      <el-stack style="--el-stack-space: 1.096875rem;">
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-      </el-stack>
-      <hr>
-      <el-stack style="--el-stack-space: 1.6453125rem;">
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-        <div class="box">
-        </div>
-      </el-stack>
-    </el-stack>
+    <t-stack style="--t-stack-space: 2.4679687500000003rem;">
+      <t-container style="--t-container-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 0.48750000000000004rem;">
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+        </t-stack>
+      </t-container>
+      <t-container style="--t-container-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 1.6453125rem;">
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+        </t-stack>
+      </t-container>
+      <t-container style="--t-container-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 3.701953125rem;">
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+          <div class="stub">
+          </div>
+        </t-stack>
+      </t-container>
+    </t-stack>
+    <h1>
+      Center
+    </h1>
+    <t-center>
+      <div class="stub">
+      </div>
+    </t-center>
   </body>
 </html>

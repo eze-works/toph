@@ -193,7 +193,7 @@
 
 mod allowlist;
 mod encode;
-pub mod every_layout;
+pub mod layout;
 mod node;
 
 pub use node::{attribute::Attribute, tag, Element, Node, Text};
