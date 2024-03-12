@@ -109,7 +109,7 @@ pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
 /// +-----------+
 /// ```
 pub fn padded(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
-    custom_("t-container")
+    custom_("t-padded")
         .set(child)
         .stylesheet(include_str!("css/padded.css"))
         .var("t-padded-padding", &padding.into().0)
