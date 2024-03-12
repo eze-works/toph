@@ -35,8 +35,6 @@ impl Display for CSSVariableMap {
         for (k, v) in self.0.iter() {
             write!(result, "--{}: {};", k, v)?;
         }
-        // Variables are set through the style attribute
-        // Prepend a `;` in case the previous style didn't have a trailing one.
-        write!(f, ";{}", result)
+        write!(f, "{}", result)
     }
 }
