@@ -336,6 +336,14 @@ impl From<String> for Node {
     }
 }
 
+impl From<Cow<'static, str>> for Node {
+    fn from(value: Cow<'static, str>) -> Self {
+        match value {
+            Cow::Owned(s) => Node::from(s),
+            Cow::Borrowed(s) => Node::from(s),
+        }
+    }
+}
 impl From<Option<Node>> for Node {
     fn from(value: Option<Node>) -> Self {
         value.unwrap_or_default()
