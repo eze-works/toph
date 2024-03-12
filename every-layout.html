@@ -2,21 +2,6 @@
 <html>
   <head>
     <style>
-      t-cluster {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--t-cluster-gap);
-        justify-content: flex-start;
-        align-items: center;
-      }
-    </style>
-    <style>
-      t-padded {
-        display: block;
-        padding: var(--t-padded-padding);
-      }
-    </style>
-    <style>
       t-cover {
         display: flex;
         flex-direction: column;
@@ -35,9 +20,6 @@
       t-cover>.t-cover-footer {
         margin-block-start: 1rem;
       }
-    </style>
-    <style>
-      .stub { width: 50px; height: 50px; background-color: black }
     </style>
     <style>
       t-stack {
@@ -63,6 +45,38 @@
       }
     </style>
     <style>
+      t-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+    <style>
+      t-fluid-grid {
+        display: grid;
+        grid-gap: var(--t-fluid-grid-gap);
+        grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));
+      }
+    </style>
+    <style>
+      t-padded {
+        display: block;
+        padding: var(--t-padded-padding);
+      }
+    </style>
+    <style>
+      .stub { width: 50px; height: 50px; background-color: black }
+    </style>
+    <style>
+      t-cluster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--t-cluster-gap);
+        justify-content: flex-start;
+        align-items: center;
+      }
+    </style>
+    <style>
       t-switcher {
         display: flex;
         flex-wrap: wrap;
@@ -72,13 +86,6 @@
       t-switcher > * {
         flex-grow: 1;
         flex-basis: calc((var(--t-switcher-threshold) - 100%) * 999);
-      }
-    </style>
-    <style>
-      t-center {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
       }
     </style>
     <title>
@@ -186,5 +193,28 @@
       <div class="stub t-cover-footer">
       </div>
     </t-cover>
+    <h1>
+      Fluid Grid
+    </h1>
+    <t-fluid-grid style="--t-fluid-grid-gap: 0.48750000000000004rem;--t-fluid-grid-min-width: 10ch;">
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+      <div class="stub">
+      </div>
+    </t-fluid-grid>
   </body>
 </html>

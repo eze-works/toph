@@ -22,7 +22,8 @@ impl From<u16> for Measure {
 /// Expresses the spacing between elements as modular scale based on a line height of 1.5
 pub struct ModularSpacing(String);
 
-/// Expresses the measure (or width) of elements as a multiple of character width in current font.
+/// Expresses the measure (or width) of elements as a multiple of character width in the current
+/// font.
 pub struct Measure(String);
 
 /// A container with children that are evenly spaced out vertically
@@ -227,4 +228,29 @@ pub fn switcher(
         .stylesheet(include_str!("css/switcher.css"))
         .var("t-switcher-gap", &gap.into().0)
         .var("t-switcher-threshold", &threshold.into().0)
+}
+
+/// A responsive Grid.
+///
+/// Each Grid element is given a minimum/ideal width, but is allowed to grow & shrink according to
+/// available space.
+///
+/// ```text
+/// +---+  +---+  +---+
+/// |   |  |   |  |   |
+/// +---+  +---+  +---+
+/// +---+  +---+  
+/// |   |  |   |  
+/// +---+  +---+  
+/// ```
+pub fn fluid_grid(
+    ideal_width: impl Into<Measure>,
+    gap: impl Into<ModularSpacing>,
+    child: impl Into<Node>,
+) -> Node {
+    custom_("t-fluid-grid")
+        .set(child)
+        .stylesheet(include_str!("css/fluid-grid.css"))
+        .var("t-fluid-grid-min-width", &ideal_width.into().0)
+        .var("t-fluid-grid-gap", &gap.into().0)
 }

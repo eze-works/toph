@@ -43,6 +43,22 @@ fn main() {
                 cover(stub(), None, None, Some(50)),
                 cover(stub(), Some(stub()), None, None),
                 cover(stub(), Some(stub()), Some(stub()), None),
+                h1_.set("Fluid Grid"),
+                fluid_grid(
+                    10,
+                    1,
+                    [
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                        stub(),
+                    ],
+                ),
             ]),
         ]),
     ]
