@@ -65,7 +65,20 @@ fn main() {
                     img_.with(
                         attr![src="https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg"]
                         )
-                    ).with(attr![style="width: 400px;"])
+                    ).with(attr![style="width: 400px;"]),
+                h1_.set("Manual SVG"),
+                svg_.with(attr![width="32", height="32", viewBox="0 0 32 32"])
+                    .set(custom_("path")
+                         .with(attr![
+                               fill="none",
+                               stroke="currentColor",
+                               stroke_linecap="round",
+                               stroke_linejoin="round",
+                               stroke_width="2",
+                               d="M2 6v24h28V6Zm0 9h28M7 3v6m6-6v6m6-6v6m6-6v6"
+                         ]))
+
+
             ]),
         ]),
     ]
