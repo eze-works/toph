@@ -13,5 +13,4 @@ keywords = ["template", "html"]
 
 [dependencies]
 paste = "1.0.14"
-strum = { version = "0.26.1", features = ["derive"] }
 url = "2.5.0"

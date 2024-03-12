@@ -3,7 +3,6 @@
 //! Sources: <https://every-layout.dev>
 
 use crate::{attr, tag::*, Node};
-use std::borrow::Cow;
 use std::fmt::Display;
 
 impl From<u8> for ModularSpacing {
@@ -298,4 +297,3 @@ pub fn frame(ratio: impl Into<Ratio>, child: impl Into<Node>) -> Node {
         .var("t-frame-ratio", &ratio)
         .stylesheet(include_str!("css/frame.css"))
 }
-

@@ -152,19 +152,17 @@
 //! let css = format!("p {{ font-size: {}; }}", user_input);
 //!
 //! // This does not compile
+//! // let mut html = html_.set([ head_, p_.stylesheet(css)]);
+//! // Neither does this
 //! // let mut html = html_.set([ head_, p_.stylesheet(&css)]);
 //!
-//! // Neither does this. good try though
+//! // Technically, you _could_ leak the string...
+//! // Why you would want to leak memory for this purpose is beyond me.
+//! // You are on your own.
 //! // let mut html = html_.set([ head_, p_.stylesheet(css.leak())]);
 //!
-//! // this compiles .. but won't actually do anything
-//! let mut html = html_.set([ head_, p_.stylesheet(css)]);
-//! assert_eq!(
-//!   html.write_to_string(false),
-//!   "<html><head></head><p></p></html>"
-//! );
-//!
-//! // The only way to set snippets is through literal strings.
+//! // Set snippets using string literals
+//! // Parameterize with css custom variables & `var()`
 //! let css = "p { font-size: var(--font-size); }";
 //! let mut html = html_.set([
 //!     head_,

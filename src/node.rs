@@ -188,21 +188,17 @@ impl Node {
     ///
     /// CSS snippets are de-duplicated; Including the same snippet multiple times  will
     /// still result in a single `<style>` element
-    pub fn stylesheet(mut self, css: impl Into<Cow<'static, str>>) -> Node {
+    pub fn stylesheet(mut self, css: &'static str) -> Node {
         if let Self::Element(ref mut el) = self {
-            if let Cow::Borrowed(s) = css.into() {
-                el.assets.push(asset::Asset::StyleSheet(s));
-            }
+            el.assets.push(asset::Asset::StyleSheet(css));
         }
         self
     }
 
     /// Links a JavaScript snippet to the Node
     ///
-    /// The javascript snippet will be included as a `<script>` element when this Node is in a tree
+    /// The javascript snippet will be included verbatim as a `<script>` element when this Node is in a tree
     /// with both `<html>` & `<body>` tags
-    ///
-    /// The contents of the snippet are included verbatim
     ///
     /// # Example
     ///

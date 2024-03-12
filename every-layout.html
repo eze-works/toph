@@ -2,20 +2,10 @@
 <html>
   <head>
     <style>
-      .stub { width: 50px; height: 50px; background-color: black }
-    </style>
-    <style>
       t-fluid-grid {
         display: grid;
         grid-gap: var(--t-fluid-grid-gap);
         grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));
-      }
-    </style>
-    <style>
-      t-center {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
       }
     </style>
     <style>
@@ -39,29 +29,6 @@
         object-fit: cover;
         inline-size: 100%;
         block-size: 100%;
-      }
-    </style>
-    <style>
-      t-stack {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-      }
-      
-      t-stack>* {
-        margin-block: 0;
-      }
-      
-      t-stack>*+* {
-        margin-block-start: var(--t-stack-space);
-      }
-      
-      t-stack:only-child {
-        block-size: 100%;
-      }
-      
-      t-stack> :nth-child(3) {
-        margin-block-end: auto;
       }
     </style>
     <style>
@@ -94,10 +61,7 @@
       }
     </style>
     <style>
-      t-padded {
-        display: block;
-        padding: var(--t-padded-padding);
-      }
+      .stub { width: 50px; height: 50px; background-color: black }
     </style>
     <style>
       t-switcher {
@@ -109,6 +73,42 @@
       t-switcher > * {
         flex-grow: 1;
         flex-basis: calc((var(--t-switcher-threshold) - 100%) * 999);
+      }
+    </style>
+    <style>
+      t-padded {
+        display: block;
+        padding: var(--t-padded-padding);
+      }
+    </style>
+    <style>
+      t-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      
+      t-stack>* {
+        margin-block: 0;
+      }
+      
+      t-stack>*+* {
+        margin-block-start: var(--t-stack-space);
+      }
+      
+      t-stack:only-child {
+        block-size: 100%;
+      }
+      
+      t-stack> :nth-child(3) {
+        margin-block-end: auto;
+      }
+    </style>
+    <style>
+      t-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     </style>
     <title>
@@ -246,7 +246,7 @@
       <img src="https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg">
     </t-frame>
     <h1>
-      SVG
+      Manual SVG
     </h1>
     <svg height="32" viewBox="0 0 32 32" width="32">
       <path d="M2 6v24h28V6Zm0 9h28M7 3v6m6-6v6m6-6v6m6-6v6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
