@@ -50,7 +50,6 @@ impl AttributeMap {
         }
     }
 
-
     /// Returns the key's entry in the regular attribute map
     pub fn entry(&mut self, key: &'static str) -> Entry<'_, &'static str, Cow<'static, str>> {
         self.regular.entry(key)
@@ -140,7 +139,7 @@ impl AttributeMap {
 impl Display for AttributeMap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (k, v) in self.regular.iter() {
-            if k.starts_with("data_") {
+            if k.contains('_') {
                 write!(f, " {}=\"{}\"", k.replace('_', "-"), v)?;
             } else {
                 write!(f, " {}=\"{}\"", k, v)?;
@@ -148,7 +147,7 @@ impl Display for AttributeMap {
         }
 
         for k in self.boolean.iter() {
-            if k.starts_with("_") {
+            if k.contains('_') {
                 write!(f, " {}", k.replace('_', "-"))?;
             } else {
                 write!(f, " {}", k)?;
@@ -397,12 +396,12 @@ mod tests {
     }
 
     #[test]
-    fn data_attributes() {
-        let mut html = span_.with(attr![data_hello = "hi"]);
+    fn attributes_with_underscores() {
+        let mut html = span_.with(attr![data_hello = "hi", something_something]);
 
         assert_eq!(
             html.write_to_string(false),
-            r#"<span data-hello="hi"></span>"#
+            r#"<span data-hello="hi" something-something></span>"#
         );
     }
 }

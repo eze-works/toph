@@ -2,9 +2,66 @@
 <html>
   <head>
     <style>
-      t-padded {
-        display: block;
-        padding: var(--t-padded-padding);
+      .stub { width: 50px; height: 50px; background-color: black }
+    </style>
+    <style>
+      t-fluid-grid {
+        display: grid;
+        grid-gap: var(--t-fluid-grid-gap);
+        grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));
+      }
+    </style>
+    <style>
+      t-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+    <style>
+      t-frame {
+        aspect-ratio: var(--t-frame-ratio);
+      
+        /*
+         * `object-fit` does not apply to non-replace elements. 
+         * centring the item in the frame and hiding the overflow is used as an
+         * alterative
+         */
+        display: flex;
+        overflow: hidden;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      
+      t-frame>img,
+      t-frame>video {
+        object-fit: cover;
+        inline-size: 100%;
+        block-size: 100%;
+      }
+    </style>
+    <style>
+      t-stack {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      
+      t-stack>* {
+        margin-block: 0;
+      }
+      
+      t-stack>*+* {
+        margin-block-start: var(--t-stack-space);
+      }
+      
+      t-stack:only-child {
+        block-size: 100%;
+      }
+      
+      t-stack> :nth-child(3) {
+        margin-block-end: auto;
       }
     </style>
     <style>
@@ -37,66 +94,9 @@
       }
     </style>
     <style>
-      t-stack {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-      }
-      
-      t-stack>* {
-        margin-block: 0;
-      }
-      
-      t-stack>*+* {
-        margin-block-start: var(--t-stack-space);
-      }
-      
-      t-stack:only-child {
-        block-size: 100%;
-      }
-      
-      t-stack> :nth-child(3) {
-        margin-block-end: auto;
-      }
-    </style>
-    <style>
-      t-frame {
-        aspect-ratio: var(--t-frame-ratio);
-      
-        /*
-         * `object-fit` does not apply to non-replace elements. 
-         * centring the item in the frame and hiding the overflow is used as an
-         * alterative
-         */
-        display: flex;
-        overflow: hidden;
-        justify-content: center;
-        align-items: center;
-      }
-      
-      
-      t-frame>img,
-      t-frame>video {
-        object-fit: cover;
-        inline-size: 100%;
-        block-size: 100%;
-      }
-    </style>
-    <style>
-      .stub { width: 50px; height: 50px; background-color: black }
-    </style>
-    <style>
-      t-center {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-    </style>
-    <style>
-      t-fluid-grid {
-        display: grid;
-        grid-gap: var(--t-fluid-grid-gap);
-        grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));
+      t-padded {
+        display: block;
+        padding: var(--t-padded-padding);
       }
     </style>
     <style>
@@ -119,9 +119,9 @@
     <h1>
       Stack
     </h1>
-    <t-stack style=";--t-stack-space: 2.4679687500000003rem;">
-      <t-container style=";--t-padded-padding: 0.48750000000000004rem;">
-        <t-stack style=";--t-stack-space: 0.48750000000000004rem;">
+    <t-stack style="--t-stack-space: 2.4679687500000003rem;">
+      <t-padded style="--t-padded-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 0.48750000000000004rem;">
           <div class="stub">
           </div>
           <div class="stub">
@@ -129,9 +129,9 @@
           <div class="stub">
           </div>
         </t-stack>
-      </t-container>
-      <t-container style=";--t-padded-padding: 0.48750000000000004rem;">
-        <t-stack style=";--t-stack-space: 1.6453125rem;">
+      </t-padded>
+      <t-padded style="--t-padded-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 1.6453125rem;">
           <div class="stub">
           </div>
           <div class="stub">
@@ -139,9 +139,9 @@
           <div class="stub">
           </div>
         </t-stack>
-      </t-container>
-      <t-container style=";--t-padded-padding: 0.48750000000000004rem;">
-        <t-stack style=";--t-stack-space: 3.701953125rem;">
+      </t-padded>
+      <t-padded style="--t-padded-padding: 0.48750000000000004rem;">
+        <t-stack style="--t-stack-space: 3.701953125rem;">
           <div class="stub">
           </div>
           <div class="stub">
@@ -149,7 +149,7 @@
           <div class="stub">
           </div>
         </t-stack>
-      </t-container>
+      </t-padded>
     </t-stack>
     <h1>
       Center
@@ -161,7 +161,7 @@
     <h1>
       Cluster
     </h1>
-    <t-cluster style=";--t-cluster-gap: 2.4679687500000003rem;">
+    <t-cluster style="--t-cluster-gap: 2.4679687500000003rem;">
       <div class="stub">
       </div>
       <div class="stub">
@@ -182,7 +182,7 @@
     <h1>
       Switcher
     </h1>
-    <t-switcher style=";--t-switcher-gap: 1.6453125rem;--t-switcher-threshold: 60ch;">
+    <t-switcher style="--t-switcher-gap: 1.6453125rem;--t-switcher-threshold: 60ch;">
       <div class="stub">
       </div>
       <div class="stub">
@@ -195,20 +195,20 @@
     <h1>
       Cover
     </h1>
-    <t-cover style=";--t-cover-percent: 50vh;">
+    <t-cover style="--t-cover-percent: 50vh;">
       
       <div class="stub t-cover-main">
       </div>
       
     </t-cover>
-    <t-cover style=";--t-cover-percent: 100vh;">
+    <t-cover style="--t-cover-percent: 100vh;">
       <div class="stub t-cover-header">
       </div>
       <div class="stub t-cover-main">
       </div>
       
     </t-cover>
-    <t-cover style=";--t-cover-percent: 100vh;">
+    <t-cover style="--t-cover-percent: 100vh;">
       <div class="stub t-cover-header">
       </div>
       <div class="stub t-cover-main">
@@ -219,7 +219,7 @@
     <h1>
       Fluid Grid
     </h1>
-    <t-fluid-grid style=";--t-fluid-grid-gap: 0.48750000000000004rem;--t-fluid-grid-min-width: 10ch;">
+    <t-fluid-grid style="--t-fluid-grid-gap: 0.48750000000000004rem;--t-fluid-grid-min-width: 10ch;">
       <div class="stub">
       </div>
       <div class="stub">
@@ -242,8 +242,15 @@
     <h1>
       Frame
     </h1>
-    <t-frame style="width: 400px;;--t-frame-ratio: 3/4;">
+    <t-frame style="width: 400px;--t-frame-ratio: 3/4;">
       <img src="https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg">
     </t-frame>
+    <h1>
+      SVG
+    </h1>
+    <svg height="32" viewBox="0 0 32 32" width="32">
+      <path d="M2 6v24h28V6Zm0 9h28M7 3v6m6-6v6m6-6v6m6-6v6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      </path>
+    </svg>
   </body>
 </html>
