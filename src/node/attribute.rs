@@ -1,5 +1,6 @@
 use crate::{allowlist, encode};
 use std::borrow::Cow;
+use std::collections::btree_map::Entry;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Display;
 
@@ -47,6 +48,12 @@ impl AttributeMap {
             regular: BTreeMap::new(),
             boolean: BTreeSet::new(),
         }
+    }
+
+
+    /// Returns the key's entry in the regular attribute map
+    pub fn entry(&mut self, key: &'static str) -> Entry<'_, &'static str, Cow<'static, str>> {
+        self.regular.entry(key)
     }
 
     /// Add a new HTML attribute.

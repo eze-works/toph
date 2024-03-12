@@ -19,6 +19,11 @@ impl CSSVariableMap {
     pub const fn new() -> Self {
         Self(BTreeMap::new())
     }
+
+    /// Returns `true` if the variable map is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl Display for CSSVariableMap {
@@ -30,6 +35,8 @@ impl Display for CSSVariableMap {
         for (k, v) in self.0.iter() {
             write!(result, "--{}: {};", k, v)?;
         }
-        write!(f, " style=\"{}\"", result)
+        // Variables are set through the style attribute
+        // Prepend a `;` in case the previous style didn't have a trailing one.
+        write!(f, ";{}", result)
     }
 }

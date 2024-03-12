@@ -1,5 +1,6 @@
 use super::{asset::Asset, tag::*, Element, Node, Text};
 use std::borrow::Cow;
+use std::collections::btree_map::Entry;
 use std::collections::HashSet;
 use std::fmt;
 use std::io;
@@ -168,8 +169,20 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
+        // css variables are set using the `style` attribute
+        // merge them with any existing style attribute
+        if !el.variables.is_empty() {
+            match el.attributes.entry("style") {
+                Entry::Vacant(v) => {
+                    v.insert(el.variables.to_string().into());
+                }
+                Entry::Occupied(mut o) => {
+                    let existing = o.get_mut();
+                    *existing += Cow::Owned(el.variables.to_string());
+                }
+            }
+        }
         write!(self.html, "{}", el.attributes)?;
-        write!(self.html, "{}", el.variables)?;
         write!(self.html, ">{}", self.newline())?;
         if !el.is_void() {
             self.increment_indent();
@@ -217,8 +230,20 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
         write!(self.html, "<{}", el.tag)?;
+        // css variables are set using the `style` attribute
+        // merge them with any existing style attribute
+        if !el.variables.is_empty() {
+            match el.attributes.entry("style") {
+                Entry::Vacant(v) => {
+                    v.insert(el.variables.to_string().into());
+                }
+                Entry::Occupied(mut o) => {
+                    let existing = o.get_mut();
+                    *existing += Cow::Owned(el.variables.to_string());
+                }
+            }
+        }
         write!(self.html, "{}", el.attributes)?;
-        write!(self.html, "{}", el.variables)?;
         write!(self.html, ">")?;
         Ok(())
     }

@@ -3,6 +3,7 @@
 //! Sources: <https://every-layout.dev>
 
 use crate::{attr, tag::*, Node};
+use std::fmt::Display;
 
 impl From<u8> for ModularSpacing {
     fn from(value: u8) -> Self {
@@ -25,6 +26,21 @@ pub struct ModularSpacing(String);
 /// Expresses the measure (or width) of elements as a multiple of character width in the current
 /// font.
 pub struct Measure(String);
+
+/// A Ratio
+pub struct Ratio(u8, u8);
+
+impl From<(u8, u8)> for Ratio {
+    fn from(value: (u8, u8)) -> Self {
+        Ratio(value.0, value.1)
+    }
+}
+
+impl Display for Ratio {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}/{}", self.0, self.1)
+    }
+}
 
 /// A container with children that are evenly spaced out vertically
 ///
@@ -235,6 +251,8 @@ pub fn switcher(
 /// Each Grid element is given a minimum/ideal width, but is allowed to grow & shrink according to
 /// available space.
 ///
+/// The Grid is dynamic, so it could start out looking like this:
+///
 /// ```text
 /// +---+  +---+  +---+
 /// |   |  |   |  |   |
@@ -242,6 +260,20 @@ pub fn switcher(
 /// +---+  +---+  
 /// |   |  |   |  
 /// +---+  +---+  
+/// ```
+///
+/// And switch to this if the viewport becomes smaller:
+///
+/// ```text
+/// +---+  +---+  
+/// |   |  |   |  
+/// +---+  +---+  
+/// +---+  +---+  
+/// |   |  |   |  
+/// +---+  +---+  
+/// +---+  
+/// |   |  
+/// +---+  
 /// ```
 pub fn fluid_grid(
     ideal_width: impl Into<Measure>,
@@ -253,4 +285,15 @@ pub fn fluid_grid(
         .stylesheet(include_str!("css/fluid-grid.css"))
         .var("t-fluid-grid-min-width", &ideal_width.into().0)
         .var("t-fluid-grid-gap", &gap.into().0)
+}
+
+/// A container that acts as a "window" its child element (usually an image)
+///
+/// The first argument controls the container's aspect ratio.
+pub fn frame(ratio: impl Into<Ratio>, child: impl Into<Node>) -> Node {
+    let ratio = ratio.into().to_string();
+    custom_("t-frame")
+        .set(child)
+        .var("t-frame-ratio", &ratio)
+        .stylesheet(include_str!("css/frame.css"))
 }

@@ -59,6 +59,13 @@ fn main() {
                         stub(),
                     ],
                 ),
+                h1_.set("Frame"),
+                frame(
+                    (3, 4),
+                    img_.with(
+                        attr![src="https://img.freepik.com/free-photo/painting-mountain-lake-with-mountain-background_188544-9126.jpg"]
+                        )
+                    ).with(attr![style="width: 400px;"])
             ]),
         ]),
     ]

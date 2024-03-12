@@ -1,0 +1,21 @@
+t-frame {
+  aspect-ratio: var(--t-frame-ratio);
+
+  /*
+   * `object-fit` does not apply to non-replace elements. 
+   * centring the item in the frame and hiding the overflow is used as an
+   * alterative
+   */
+  display: flex;
+  overflow: hidden;
+  justify-content: center;
+  align-items: center;
+}
+
+
+t-frame>img,
+t-frame>video {
+  object-fit: cover;
+  inline-size: 100%;
+  block-size: 100%;
+}
