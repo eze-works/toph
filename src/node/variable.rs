@@ -11,7 +11,7 @@ impl CSSVariableMap {
     ///
     /// The value will be attribute encoded  
     pub fn insert(&mut self, key: &'static str, value: &str) {
-        let encoded = encode::attr(&value);
+        let encoded = encode::attr(value);
         self.0.insert(key, encoded);
     }
 

@@ -7,7 +7,7 @@ readme = "README.md"
 description = "Simple server-side html generation"
 repository = "https://git.sr.ht/~eanyanwu/toph"
 
-keywords = ["template", "html"]
+keywords = ["template", "html", "layout"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

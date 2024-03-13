@@ -81,7 +81,7 @@ impl AttributeMap {
             // Borrowed values are url encoded if applicable
             Some(value @ Cow::Borrowed(_)) => {
                 let value = if URL_ATTRIBUTES.contains(&key) {
-                    encode::url(&value, false).map(|v| Cow::Owned(v))
+                    encode::url(&value, false).map(Cow::Owned)
                 } else {
                     Some(value)
                 };
