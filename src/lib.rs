@@ -1,8 +1,10 @@
-//! An API for building  HTML documents.
+//! An API for building HTML documents in Rust.
 //!
+//! - Macro use kept to a minimum (there is just one macro for setting attributes). It's Just Rust
+//! Code.
 //! - [Safely](#xss-prevention) set attributes and content on HTML elements.
 //! - Link [css](crate::Node::stylesheet) & [javascript](crate::Node::js) snippets to HTML
-//! elements, such that those snippets only appear if the linked element is displayed.
+//! elements, such that those snippets appear when the linked element is displayed.
 //!
 //! The crate also implements [a set of layout primitives](crate::layout) so you don't have to
 //!
@@ -65,20 +67,16 @@
 //!
 //! ## XSS Prevention
 //!
-//! `'static` string slices in Rust generally[^1] correspond to string literals. This crate takes
-//! advantage of this by allowing `'static` string slices to appear anywhere in the HTML un-encoded
-//! since by their nature they cannot contain user input.
+//! A couple measures are taken to protect against Cross-site scripting attacks (XSS):
 //!
-//! A handful of additional measures are taken to protect against Cross-site scripting attacks
-//! (XSS):
+//! - Strings are appropriately encoded in HTML, attribute and URL contexts:
 //!
-//! - Owned strings are appropriately encoded in HTML, attribute and URL contexts:
 //! ```
 //! use toph::{attr, tag::*};
 //!
-//! let xss_attr_attempt = String::from(r#"" onclick="alert(1)""#);
-//! let xss_attempt = String::from(r#"><script>alert(1)"#);
-//! let url = String::from("/path with space");
+//! let xss_attr_attempt = r#"" onclick="alert(1)""#;
+//! let xss_attempt = r#"<script>alert(1)"#;
+//! let url = "/path with space";
 //!
 //! let mut span = span_
 //!     .with(attr![class=xss_attr_attempt])
@@ -90,7 +88,7 @@
 //!
 //! assert_eq!(
 //!     span.write_to_string(false),
-//!     r#"<span class="&quot; onclick=&quot;alert(1)&quot;">&gt;&lt;script&gt;alert(1)</span>"#
+//!     r#"<span class="&quot; onclick=&quot;alert(1)&quot;">&lt;script&gt;alert(1)</span>"#
 //! );
 //!
 //! assert_eq!(
@@ -99,51 +97,10 @@
 //! );
 //! ```
 //!
-//! - Owned strings may only be used to set HTML attributes that are considered [safe
-//! sinks](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html#output-encoding-for-html-attribute-contexts).
-//! Notably, none of the event attributes (`on*`) are on this list.
-//!
-//! ```
-//! use toph::{attr, tag::*};
-//!
-//! let user_input = String::from("alert(1)");
-//! let mut html = button_.with(attr![onclick=user_input]);
-//! assert_eq!(
-//!     html.write_to_string(false),
-//!     r#"<button></button>"# // the attribute is ignored
-//! );
-//!
-//! // You can still set any atribute you want using `'static` string slices
-//! let mut html = button_.with(attr![onclick="alert(1)"]);
-//! assert_eq!(
-//!     html.write_to_string(false),
-//!     r#"<button onclick="alert(1)"></button>"#
-//! );
-//! ```
-//!
-//! - For owned strings, A subset of the safe attributes are recognized as URL attributes. For
-//! these, there is a whitelist of allowed schemes. Notably, this excludes `javascript:`.
-//!
-//! ```
-//! use toph::{attr, tag::*};
-//!
-//!
-//! let mut html = a_.with(attr![href=String::from("mailto:a.com")]);
-//! assert_eq!(
-//!     html.write_to_string(false),
-//!     r#"<a href="mailto:a.com"></a>"#
-//! );
-//!
-//! let mut html = a_.with(attr![href=String::from("javascript:alert(1)")]);
-//! assert_eq!(
-//!     html.write_to_string(false),
-//!     "<a></a>"
-//! );
-//! ```
-//!
-//! - JavaScript & CSS snippets can only be set using `'static` string slices.
+//! - JavaScript & CSS snippets can only be set using literal (i.e. `'static`) string slices.
 //!   - It is frequently useful to parameterize styles though, so the [`var`](crate::Node::var)
 //!   method is provided.
+//!   - To include files, use [`include_str`]
 //!
 //! ```
 //! use toph::{tag::*};
@@ -182,15 +139,10 @@
 //!"#);
 //!
 //! ```
-//!
-//!
-//! [^1]: [`String::leak`] does allow you to get a `&'static mut str`. However even that won't work
-//! with this crate because the APIs expect a shared reference.
 
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-mod allowlist;
 mod encode;
 pub mod layout;
 mod node;

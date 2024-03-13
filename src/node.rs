@@ -6,7 +6,6 @@ pub mod visitor;
 
 use crate::encode;
 use attribute::AttributeMap;
-use std::borrow::Cow;
 use std::io;
 use variable::CSSVariableMap;
 
@@ -70,7 +69,7 @@ impl Default for Node {
 /// - [`Node::var`]
 /// - [`Node::set`]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Text(Cow<'static, str>);
+pub struct Text(String);
 
 /// A Fragment is a container for multiple `Node`s. It's the variant created with an array of
 /// nodes is converted to a single node.
@@ -152,11 +151,11 @@ impl Node {
     /// See the [attr](crate::attr) macro docs for details.
     pub fn with<I>(mut self, attributes: I) -> Node
     where
-        I: IntoIterator<Item = (&'static str, Option<Cow<'static, str>>)>,
+        I: IntoIterator<Item = (&'static str, String, bool)>,
     {
         if let Self::Element(ref mut el) = self {
             for attr in attributes {
-                el.attributes.insert(attr.0, attr.1)
+                el.attributes.insert(attr.0, &attr.1, attr.2)
             }
         }
         self
@@ -287,7 +286,7 @@ impl Node {
     /// ```
     /// use toph::tag::*;
     ///
-    /// // A single 'static string slice
+    /// // A string slice
     /// span_.set("hello");
     ///
     /// // An owned string
@@ -300,7 +299,7 @@ impl Node {
     /// // An array of nodes
     /// span_.set([div_, span_]);
     ///
-    /// // 'static string slices and owned strings can be
+    /// // string slices and owned strings can be
     /// // converted to nodes, so this also works
     /// span_.set([
     ///     div_,
@@ -319,27 +318,19 @@ impl Node {
     }
 }
 
-impl From<&'static str> for Node {
-    fn from(value: &'static str) -> Self {
-        Node::Text(Text(Cow::Borrowed(value)))
+impl From<&str> for Node {
+    fn from(value: &str) -> Self {
+        Node::from(value.to_string())
     }
 }
 
 impl From<String> for Node {
     fn from(value: String) -> Self {
         let encoded = encode::html(&value);
-        Node::Text(Text(encoded.into()))
+        Node::Text(Text(encoded))
     }
 }
 
-impl From<Cow<'static, str>> for Node {
-    fn from(value: Cow<'static, str>) -> Self {
-        match value {
-            Cow::Owned(s) => Node::from(s),
-            Cow::Borrowed(s) => Node::from(s),
-        }
-    }
-}
 impl From<Option<Node>> for Node {
     fn from(value: Option<Node>) -> Self {
         value.unwrap_or_default()
@@ -395,34 +386,23 @@ mod tests {
             "<span>literal</span><span>string</span>",
         );
 
+        // strings are html encoded
+        assert_html(span_.set("<script>"), "<span>&lt;script&gt;</span>");
+
         // nesting nodes
         assert_html(
             [div_.set([span_, div_.set(div_)])],
             "<div><span></span><div><div></div></div></div>",
         );
 
-        // literal attribute values can be used with unsafe sinks
+        // regular attributes
         assert_html(
             span_.with(attr![onclick = "something"]),
             r#"<span onclick="something"></span>"#,
         );
-        // non-literal attribute values cannot be used with unsafe sinks
-        assert_html(span_.with(attr![onclick = String::new()]), "<span></span>");
-
-        // literal urls can include any scheme
         assert_html(
-            span_.with(attr![src = "javascript:boom"]),
-            r#"<span src="javascript:boom"></span>"#,
-        );
-
-        // non-literal urls may only use safe schemes
-        assert_html(
-            span_.with(attr![src = String::from("javascript:")]),
-            "<span></span>",
-        );
-        assert_html(
-            span_.with(attr![src = String::from("mailto:a.com")]),
-            r#"<span src="mailto:a.com"></span>"#,
+            span_.with(attr![onclick = String::from("something")]),
+            r#"<span onclick="something"></span>"#,
         );
 
         // boolean attributes are supported

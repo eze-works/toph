@@ -178,7 +178,7 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
                 }
                 Entry::Occupied(mut o) => {
                     let existing = o.get_mut();
-                    *existing += Cow::Owned(el.variables.to_string());
+                    *existing += &el.variables.to_string();
                 }
             }
         }
@@ -239,7 +239,7 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
                 }
                 Entry::Occupied(mut o) => {
                     let existing = o.get_mut();
-                    *existing += Cow::Owned(el.variables.to_string());
+                    *existing += &el.variables.to_string();
                 }
             }
         }
