@@ -11,17 +11,55 @@
       }
     </style>
     <style>
+      t-cover {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        min-block-size: var(--t-cover-percent);
+      }
+      
+      t-cover>.t-cover-main {
+        margin-block: auto;
+      }
+      
+      t-cover>.t-cover-header {
+        margin-block-end: 1rem;
+      }
+      
+      t-cover>.t-cover-footer {
+        margin-block-start: 1rem;
+      }
+    </style>
+    <style>
+      t-padded {
+        display: block;
+        padding: var(--t-padded-padding);
+      }
+    </style>
+    <style>
+      t-switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--t-switcher-gap);
+      }
+      
+      t-switcher > * {
+        flex-grow: 1;
+        flex-basis: calc((var(--t-switcher-threshold) - 100%) * 999);
+      }
+    </style>
+    <style>
       t-stack {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
       }
       
-      t-stack&gt;* {
+      t-stack>* {
         margin-block: 0;
       }
       
-      t-stack&gt;*+* {
+      t-stack>*+* {
         margin-block-start: var(--t-stack-space);
       }
       
@@ -29,7 +67,7 @@
         block-size: 100%;
       }
       
-      t-stack&gt; :nth-child(3) {
+      t-stack> :nth-child(3) {
         margin-block-end: auto;
       }
     </style>
@@ -49,17 +87,18 @@
       }
       
       
-      t-frame&gt;img,
-      t-frame&gt;video {
+      t-frame>img,
+      t-frame>video {
         object-fit: cover;
         inline-size: 100%;
         block-size: 100%;
       }
     </style>
     <style>
-      t-padded {
-        display: block;
-        padding: var(--t-padded-padding);
+      t-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     </style>
     <style>
@@ -70,45 +109,6 @@
         display: grid;
         grid-gap: var(--t-fluid-grid-gap);
         grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));
-      }
-    </style>
-    <style>
-      t-switcher {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--t-switcher-gap);
-      }
-      
-      t-switcher &gt; * {
-        flex-grow: 1;
-        flex-basis: calc((var(--t-switcher-threshold) - 100%) * 999);
-      }
-    </style>
-    <style>
-      t-cover {
-        display: flex;
-        flex-direction: column;
-        padding: 1rem;
-        min-block-size: var(--t-cover-percent);
-      }
-      
-      t-cover&gt;.t-cover-main {
-        margin-block: auto;
-      }
-      
-      t-cover&gt;.t-cover-header {
-        margin-block-end: 1rem;
-      }
-      
-      t-cover&gt;.t-cover-footer {
-        margin-block-start: 1rem;
-      }
-    </style>
-    <style>
-      t-center {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
       }
     </style>
     <title>

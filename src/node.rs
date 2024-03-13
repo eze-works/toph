@@ -316,6 +316,24 @@ impl Node {
         }
         self
     }
+
+    /// Set this element's content without html encoding
+    ///
+    /// ```
+    /// use toph::tag::*;
+    /// let mut html = span_.dangerously_set_html("<script>alert(1)</script>");
+    ///
+    /// assert_eq!(
+    ///     html.write_to_string(false),
+    ///     "<span><script>alert(1)</script></span>"
+    /// );
+    /// ```
+    pub fn dangerously_set_html(mut self, html: &str) -> Node {
+        if let Self::Element(ref mut el) = self {
+            el.child = Some(Box::new(Node::Text(Text(html.to_string()))))
+        }
+        self
+    }
 }
 
 impl From<&str> for Node {

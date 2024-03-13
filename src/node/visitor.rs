@@ -24,12 +24,12 @@ pub fn include_assets(node: &mut Node) {
     let script_fragments = collector
         .js
         .into_iter()
-        .map(|j| script_.set(j))
+        .map(|j| script_.dangerously_set_html(j))
         .collect::<Vec<_>>();
     let style_fragments = collector
         .css
         .into_iter()
-        .map(|c| style_.set(c))
+        .map(|c| style_.dangerously_set_html(c))
         .collect::<Vec<_>>();
 
     if !script_fragments.is_empty() {

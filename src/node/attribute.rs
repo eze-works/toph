@@ -172,37 +172,39 @@ macro_rules! attr {
 //
 // Consider this invocation:
 // ```
-// attr![async, class = "hidden", checked]
+// attr![class = "hidden", async, id = "id"]
 // ```
 // This is the trace:
 //
 // ```
-// expanding `attr! { async, class = "hidden", checked }`
-// to `{ $crate :: attr_impl! ([] -> async, class = "hidden", checked) }`
+// expanding `attr! { class = "hidden", async, id = "id" }`
+// to `{ $crate :: attr_impl! ([] -> class = "hidden", async, id = "id") }`
 //
-// expanding `attr_impl! { [] -> async, class = "hidden", checked }`
-// to `$crate :: attr_impl! ([$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked)`
+// expanding `attr_impl! { [] -> class = "hidden", async, id = "id" }`
+// to `$crate :: attr_impl! ([(stringify! (class), String :: from("hidden"), false)] -> async, id = "id")`
 //
-// expanding `attr_impl! { [$crate :: Attribute :: new_boolean(stringify! (async))] -> class = "hidden", checked }`
-// to `$crate :: attr_impl! ([crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked)`
+// expanding `attr_impl! { [(stringify! (class), String :: from("hidden"), false)] -> async, id = "id" }`
+// to `$crate :: attr_impl! ([(stringify!(class), String::from("hidden"), false), (stringify! (async), String :: new(), true)] -> id = "id")`
 //
-// expanding `attr_impl! { [crate::Attribute::new_boolean(stringify!(async)), $crate :: Attribute :: new(stringify! (class), "hidden")] -> checked }`
-// to `[crate::Attribute::new_boolean(stringify!(async)), crate::Attribute::new(stringify!(class), "hidden"), $crate :: Attribute :: new_boolean(stringify! (checked))].to_vec()`
+// expanding `attr_impl! { [(stringify!(class), String::from("hidden"), false), (stringify! (async), String :: new(), true)] -> id = "id" }`
+// to `$crate :: attr_impl! ([(stringify!(class), String::from("hidden"), false), (stringify!(async), String::new(), true), (stringify! (id), String :: from("id"), false)] ->)`
+//
+// expanding `attr_impl! { [(stringify!(class), String::from("hidden"), false), (stringify!(async), String::new(), true), (stringify! (id), String :: from("id"), false)] -> }`
+// to `[(stringify!(class), String::from("hidden"), false), (stringify!(async), String::new(), true), (stringify!(id), String::from("id"), false),]`
 // ```
 //
 // Given a list like [key = value, key, key = value,  ... ] the macro examines the head of the
-// list (i.e. the first `key = value`) and creates a new Attribute value from it.
+// list (i.e. the first `key = value`) and creates a new three-element tuple value from it.
 //
-// It then recursively calls it self with the attribute expression it created inside what looks
-// like an array (i.e. [Attribute]). No array is actually created because there is another
-// rule that matches that array structure using a token tree.
+// It then recursively calls it self with the tuple expression inside what looks like an array
+// (i.e. [(T1, T2, T3)]). No array is actually created because there is another rule that matches that
+// array structure using a token tree.
 //
-// The created attribute "expresssions" are seperated from the unparsed input with a `->`
+// The created tuple "expresssions" are seperated from the unparsed input with a `->`
 //
-// Jumping through these hoops is necessary because declarative macros need to produce
-// valid Rust syntax at each expansion. You cannot at any point output a partial `Vec` of
-// arrays. The macro uses recursion to assemble all the tokens necessary to create the full
-// expression at the end.
+// Jumping through these hoops is necessary because declarative macros need to produce valid Rust
+// syntax at each expansion. You cannot at any point output a partial array. The macro uses
+// recursion to assemble all the tokens necessary to create the full expression at the end.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! attr_impl {
