@@ -6,7 +6,7 @@
 //! - Link [css](crate::Node::stylesheet) & [javascript](crate::Node::js) snippets to HTML
 //! elements, such that those snippets appear when the linked element is displayed.
 //!
-//! The crate also implements [a set of layout primitives](crate::layout) so you don't have to
+//! The crate also implements [a set of core css components](crate::component) so you don't have to
 //!
 //! ## Example
 //!
@@ -18,16 +18,16 @@
 //!     doctype_,
 //!     html_.with(attr![lang="en"])
 //!         .set([
-//!             head_.set(title_.set("My Webpage")),
+//!             head_.set(title_.set(t_("My Webpage"))),
 //!             body_.set([
 //!                 ul_.with(attr![id="navigation"])
 //!                     .set(
 //!                         navigation.into_iter().map(|(caption, url)| {
-//!                             li_.set(a_.with(attr![href=url]).set(caption))
+//!                             li_.set(a_.with(attr![href=url]).set(t_(caption)))
 //!                         }).collect::<Vec<_>>()
 //!                     ),
 //!                 h1_.stylesheet("h1 { text-decoration: underline; }")
-//!                     .set("My Webpage")
+//!                     .set(t_("My Webpage"))
 //!             ])
 //!         ])
 //! ]);
@@ -75,7 +75,7 @@
 //! use toph::{attr, tag::*};
 //!
 //! let xss_attr_attempt = r#"" onclick="alert(1)""#;
-//! let xss_attempt = r#"<script>alert(1)"#;
+//! let xss_attempt = t_(r#"<script>alert(1)"#);
 //! let url = "/path with space";
 //!
 //! let mut span = span_
@@ -84,7 +84,7 @@
 //!
 //! let mut anchor = a_
 //!     .with(attr![href=url])
-//!     .set("A link");
+//!     .set(t_("A link"));
 //!
 //! assert_eq!(
 //!     span.write_to_string(false),
@@ -143,8 +143,8 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
+pub mod component;
 mod encode;
-pub mod layout;
 mod node;
 
 pub use node::{tag, Element, Fragment, Node, Text};

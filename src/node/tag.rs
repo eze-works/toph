@@ -11,6 +11,7 @@
 
 use super::*;
 use attribute::AttributeMap;
+use encode::html;
 use variable::CSSVariableMap;
 
 /// Creates an HTML Node with a custom tag name.
@@ -22,6 +23,11 @@ pub fn custom_(tag: &'static str) -> Node {
         assets: vec![],
         variables: CSSVariableMap::new(),
     })
+}
+
+/// Creates a plain HTML text element
+pub fn t_<I: AsRef<str>>(text: I) -> Node {
+    Node::Text(Text(html(text.as_ref())))
 }
 
 macro_rules! impl_tag {

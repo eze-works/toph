@@ -281,36 +281,24 @@ impl Node {
 
     /// Sets this Element's children
     ///
-    /// You can pass in anything that can be converted to a [`Node`](crate::Node):
+    ///
+    /// You can pass in another `Node` as an argument, as well as anything that can be [converted into
+    /// an iterator of `Nodes`](std::iter::IntoIterator)
+    ///
+    /// This includes things such as `Option<Node>`, `Result<Node>` and arrays & `Vec`s of `Node`s
     ///
     /// ```
     /// use toph::tag::*;
     ///
-    /// // A string slice
-    /// span_.set("hello");
-    ///
-    /// // An owned string
-    /// span_.set(String::from("hello"));
-    ///
-    /// // A span with nothing in it.
-    /// span_;
+    /// // Another node
+    /// span_.set(t_("hello"));
     ///
     /// // An array of nodes
     /// span_.set([div_, span_]);
     ///
-    /// // string slices and owned strings can be
-    /// // converted to nodes, so this also works
-    /// span_.set([
-    ///     div_,
-    ///     "bare string".into(),
-    ///     span_,
-    /// ]);
-    ///
-    /// // An option of anything that can be converted into a node
-    /// span_.set(Some("hello"));
+    /// // A node wrapped in an  option or result
+    /// span_.set(Some(div_));
     /// ```
-    ///
-    /// Refer to the [trait implementations](#trait-implementations) for a comprehensive list
     pub fn set(mut self, child: impl Into<Node>) -> Node {
         if let Self::Element(ref mut el) = self {
             el.child = Some(Box::new(child.into()));
@@ -340,60 +328,64 @@ impl Node {
     }
 }
 
-impl From<&str> for Node {
-    fn from(value: &str) -> Self {
-        Node::from(value.to_string())
-    }
-}
+// impl From<&str> for Node {
+//     fn from(value: &str) -> Self {
+//         Node::from(value.to_string())
+//     }
+// }
 
-impl From<String> for Node {
-    fn from(value: String) -> Self {
-        let encoded = encode::html(&value);
-        Node::Text(Text(encoded))
-    }
-}
+// impl From<String> for Node {
+//     fn from(value: String) -> Self {
+//         let encoded = encode::html(&value);
+//         Node::Text(Text(encoded))
+//     }
+// }
 
-impl<I: Into<Node>> From<Option<I>> for Node {
-    fn from(value: Option<I>) -> Self {
-        value.map(|v| v.into()).unwrap_or_default()
-    }
-}
+//impl<I: Into<Node>> From<Option<I>> for Node {
+//    fn from(value: Option<I>) -> Self {
+//        value.map(|v| v.into()).unwrap_or_default()
+//    }
+//}
 
-impl<I> From<Vec<I>> for Node
+// impl<I> From<Vec<I>> for Node
+// where
+//     I: Into<Node>,
+// {
+//     fn from(value: Vec<I>) -> Self {
+//         let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
+//         Self::Fragment(Fragment(nodes))
+//     }
+// }
+
+impl<I> From<I> for Node
 where
-    I: Into<Node>,
+    I: IntoIterator<Item = Node>,
 {
-    fn from(value: Vec<I>) -> Self {
-        let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
-        Self::Fragment(Fragment(nodes))
+    fn from(value: I) -> Self {
+        let vec = value.into_iter().collect::<Vec<_>>();
+        Self::Fragment(Fragment(vec))
     }
 }
 
-macro_rules! impl_node_for_array_of_nodes {
-    ($($n:expr),+) => {
-        $(
-            impl<I: Into<Node>> From<[I; $n]> for Node {
-                fn from(value: [I; $n]) -> Self {
-                    let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
-                    Node::Fragment(Fragment(nodes))
-                }
-            }
-        )+
-    };
-}
-
-impl<I: Into<Node>> From<[I; 0]> for Node {
-    fn from(_value: [I; 0]) -> Self {
-        Self::Text(Text("".into()))
-    }
-}
-
-#[rustfmt::skip]
-impl_node_for_array_of_nodes!(
-    1, 2, 3, 4, 5, 6, 7, 8, 9,
-    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    20
-);
+// macro_rules! impl_node_for_array_of_nodes {
+//     ($($n:expr),+) => {
+//         $(
+//             impl<I: Into<Node>> From<[I; $n]> for Node {
+//                 fn from(value: [I; $n]) -> Self {
+//                     let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
+//                     Node::Fragment(Fragment(nodes))
+//                 }
+//             }
+//         )+
+//     };
+// }
+//
+// #[rustfmt::skip]
+// impl_node_for_array_of_nodes!(
+//     1, 2, 3, 4, 5, 6, 7, 8, 9,
+//     10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+//     20
+// );
 
 #[cfg(test)]
 mod tests {
@@ -410,12 +402,15 @@ mod tests {
     fn html_fragments() {
         // including strings
         assert_html(
-            [span_.set("literal"), span_.set(String::from("string"))],
+            [
+                span_.set(t_("literal")),
+                span_.set(t_(String::from("string"))),
+            ],
             "<span>literal</span><span>string</span>",
         );
 
         // strings are html encoded
-        assert_html(span_.set("<script>"), "<span>&lt;script&gt;</span>");
+        assert_html(span_.set(t_("<script>")), "<span>&lt;script&gt;</span>");
 
         // nesting nodes
         assert_html(

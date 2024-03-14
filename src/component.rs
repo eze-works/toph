@@ -1,4 +1,4 @@
-//! Composable CSS Layout primitives
+//! Composable CSS Layout primitives and components
 //!
 //! Sources: <https://every-layout.dev>
 
@@ -185,7 +185,7 @@ pub fn center(child: impl Into<Node>) -> Node {
 /// So for example, this won't give you what you expect because when a list of Nodes is converted
 /// into a single one, it is actually an HTML [fragment](crate::Fragment).
 /// ```
-/// use toph::{tag::*, layout::cover};
+/// use toph::{tag::*, component::cover};
 ///
 /// let nope = cover([
 ///     span_,
@@ -296,4 +296,10 @@ pub fn frame(ratio: impl Into<Ratio>, child: impl Into<Node>) -> Node {
         .set(child)
         .var("t-frame-ratio", &ratio)
         .stylesheet(include_str!("css/frame.css"))
+}
+
+/// Applies a slightly modified [Meyer CSS reset](https://meyerweb.com/eric/tools/css/reset/) to
+/// the page
+pub fn css_reset() -> Node {
+    span_.stylesheet(include_str!("css/reset.css"))
 }
