@@ -174,7 +174,7 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
         if !el.variables.is_empty() {
             match el.attributes.entry("style") {
                 Entry::Vacant(v) => {
-                    v.insert(el.variables.to_string().into());
+                    v.insert(el.variables.to_string());
                 }
                 Entry::Occupied(mut o) => {
                     let existing = o.get_mut();
@@ -235,7 +235,7 @@ impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
         if !el.variables.is_empty() {
             match el.attributes.entry("style") {
                 Entry::Vacant(v) => {
-                    v.insert(el.variables.to_string().into());
+                    v.insert(el.variables.to_string());
                 }
                 Entry::Occupied(mut o) => {
                     let existing = o.get_mut();

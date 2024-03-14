@@ -72,7 +72,7 @@ impl AttributeMap {
             self.boolean.insert(key);
         } else {
             let value = if URL_ATTRIBUTES.contains(&key) {
-                encode::url(&value)
+                encode::url(value)
             } else {
                 Some(value.into())
             };

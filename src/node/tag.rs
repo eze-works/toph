@@ -65,6 +65,10 @@ pub(crate) const script_: Node = Node::Element(Element {
     variables: CSSVariableMap::new(),
 });
 
+/// An empty Node that does not render as anything
+#[allow(non_upper_case_globals)]
+pub const empty_: Node = Node::Text(Text(String::new()));
+
 #[allow(non_upper_case_globals)]
 pub(crate) const style_: Node = Node::Element(Element {
     tag: "style",

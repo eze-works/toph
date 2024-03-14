@@ -292,9 +292,8 @@ impl Node {
     /// // An owned string
     /// span_.set(String::from("hello"));
     ///
-    /// // These are equivalent
+    /// // A span with nothing in it.
     /// span_;
-    /// span_.set([]);
     ///
     /// // An array of nodes
     /// span_.set([div_, span_]);
@@ -306,7 +305,12 @@ impl Node {
     ///     "bare string".into(),
     ///     span_,
     /// ]);
+    ///
+    /// // An option of anything that can be converted into a node
+    /// span_.set(Some("hello"));
     /// ```
+    ///
+    /// Refer to the [trait implementations](#trait-implementations) for a comprehensive list
     pub fn set(mut self, child: impl Into<Node>) -> Node {
         if let Self::Element(ref mut el) = self {
             el.child = Some(Box::new(child.into()));
@@ -349,31 +353,37 @@ impl From<String> for Node {
     }
 }
 
-impl From<Option<Node>> for Node {
-    fn from(value: Option<Node>) -> Self {
-        value.unwrap_or_default()
+impl<I: Into<Node>> From<Option<I>> for Node {
+    fn from(value: Option<I>) -> Self {
+        value.map(|v| v.into()).unwrap_or_default()
+    }
+}
+
+impl<I> From<Vec<I>> for Node
+where
+    I: Into<Node>,
+{
+    fn from(value: Vec<I>) -> Self {
+        let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
+        Self::Fragment(Fragment(nodes))
     }
 }
 
 macro_rules! impl_node_for_array_of_nodes {
     ($($n:expr),+) => {
         $(
-            impl From<[Node; $n]> for Node {
-                fn from(value: [Node; $n]) -> Self {
-                    Node::Fragment(Fragment(value.to_vec()))
+            impl<I: Into<Node>> From<[I; $n]> for Node {
+                fn from(value: [I; $n]) -> Self {
+                    let nodes = value.into_iter().map(|v| v.into()).collect::<Vec<_>>();
+                    Node::Fragment(Fragment(nodes))
                 }
             }
         )+
     };
 }
 
-impl From<Vec<Node>> for Node {
-    fn from(value: Vec<Node>) -> Self {
-        Self::Fragment(Fragment(value))
-    }
-}
-impl From<[Node; 0]> for Node {
-    fn from(_value: [Node; 0]) -> Self {
+impl<I: Into<Node>> From<[I; 0]> for Node {
+    fn from(_value: [I; 0]) -> Self {
         Self::Text(Text("".into()))
     }
 }
