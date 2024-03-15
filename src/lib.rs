@@ -148,3 +148,7 @@ mod encode;
 mod node;
 
 pub use node::{tag, Node};
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDocTests;
