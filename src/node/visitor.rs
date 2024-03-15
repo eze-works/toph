@@ -1,13 +1,11 @@
-use super::{asset::Asset, tag::*, Element, Node, Text};
+use super::{tag::*, Asset, Node};
 use std::borrow::Cow;
 use std::collections::btree_map::Entry;
 use std::collections::HashSet;
 use std::fmt;
-use std::io;
-use std::mem;
 
 enum Tag<'n> {
-    Open(Option<&'n mut Node>),
+    Open(&'n mut Node),
     Close(&'static str),
 }
 
@@ -17,9 +15,6 @@ pub fn include_assets(node: &mut Node) {
     // Get assets
     let mut collector = SnippetCollector::new();
     visit_nodes(node, &mut collector).expect("collecting assets does not fail");
-
-    let mut style = None;
-    let mut script = None;
 
     let script_fragments = collector
         .js
@@ -32,16 +27,8 @@ pub fn include_assets(node: &mut Node) {
         .map(|c| style_.dangerously_set_html(c))
         .collect::<Vec<_>>();
 
-    if !script_fragments.is_empty() {
-        script = Some(script_fragments.into());
-    }
-
-    if !style_fragments.is_empty() {
-        style = Some(style_fragments.into());
-    }
-
     // Insert them into the tree
-    let inserter = AssetInserter::new(style, script);
+    let inserter = AssetInserter::new(style_fragments, script_fragments);
     visit_nodes(node, inserter).expect("inserting nodes does not fail");
 }
 
@@ -49,7 +36,7 @@ pub fn include_assets(node: &mut Node) {
 // [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
 pub trait NodeVisitor {
     type Error;
-    fn visit_open_tag(&mut self, _el: &mut Element) -> Result<(), Self::Error> {
+    fn visit_open_tag(&mut self, _el: &mut Node) -> Result<(), Self::Error> {
         Ok(())
     }
     fn visit_close_tag(&mut self, _tag: &'static str) -> Result<(), Self::Error> {
@@ -74,11 +61,16 @@ pub fn visit_nodes<V: NodeVisitor>(
     mut visitor: V,
 ) -> Result<(), <V as NodeVisitor>::Error> {
     let mut visit_later: Vec<Tag> = vec![];
-    visit_later.push(Tag::Open(Some(start)));
+    visit_later.push(Tag::Open(start));
 
     while let Some(t) = visit_later.pop() {
         match t {
-            Tag::Open(Some(Node::Element(el))) => {
+            Tag::Open(el) => {
+                if el.tag.is_empty() {
+                    visitor.visit_text(&el.text)?;
+                    continue;
+                }
+
                 visitor.visit_open_tag(el)?;
 
                 if el.is_void() {
@@ -88,20 +80,13 @@ pub fn visit_nodes<V: NodeVisitor>(
                 // re-visit this node after its children have been visited
                 visit_later.push(Tag::Close(el.tag));
 
-                visit_later.push(Tag::Open(el.child.as_deref_mut()));
+                for child in el.children.iter_mut().rev() {
+                    visit_later.push(Tag::Open(child));
+                }
             }
             Tag::Close(tag_name) => {
                 visitor.visit_close_tag(tag_name)?;
             }
-            Tag::Open(Some(Node::Fragment(f))) => {
-                for child in f.0.iter_mut().rev() {
-                    visit_later.push(Tag::Open(Some(child)));
-                }
-            }
-            Tag::Open(Some(Node::Text(Text(ref t)))) => {
-                visitor.visit_text(t)?;
-            }
-            _ => {}
         }
     }
 
@@ -167,7 +152,7 @@ impl<W: fmt::Write> HtmlStringWriter<W> {
 impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
     type Error = fmt::Error;
 
-    fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
+    fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
         write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
         // css variables are set using the `style` attribute
         // merge them with any existing style attribute
@@ -215,63 +200,14 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
     }
 }
 
-// A visitor that transforms a Node tree to an html byte stream.
-pub struct HtmlWriter<W> {
-    html: W,
-}
-impl<W: io::Write> HtmlWriter<W> {
-    pub fn new(inner: W) -> Self {
-        Self { html: inner }
-    }
-}
-
-impl<W: io::Write> NodeVisitor for HtmlWriter<W> {
-    type Error = io::Error;
-
-    fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
-        write!(self.html, "<{}", el.tag)?;
-        // css variables are set using the `style` attribute
-        // merge them with any existing style attribute
-        if !el.variables.is_empty() {
-            match el.attributes.entry("style") {
-                Entry::Vacant(v) => {
-                    v.insert(el.variables.to_string());
-                }
-                Entry::Occupied(mut o) => {
-                    let existing = o.get_mut();
-                    *existing += &el.variables.to_string();
-                }
-            }
-        }
-        write!(self.html, "{}", el.attributes)?;
-        write!(self.html, ">")?;
-        Ok(())
-    }
-
-    fn visit_close_tag(&mut self, tag: &'static str) -> Result<(), Self::Error> {
-        write!(self.html, "</{}>", tag)?;
-        Ok(())
-    }
-
-    fn visit_text(&mut self, text: &str) -> Result<(), Self::Error> {
-        write!(self.html, "{}", text)?;
-        Ok(())
-    }
-
-    fn finish(&mut self) -> Result<(), Self::Error> {
-        self.html.flush()?;
-        Ok(())
-    }
-}
-
 // A visitor that inserts style & script nodes into a node tree
 pub struct AssetInserter {
-    style: Option<Node>,
-    script: Option<Node>,
+    style: Vec<Node>,
+    script: Vec<Node>,
 }
 
 impl AssetInserter {
-    pub fn new(style: Option<Node>, script: Option<Node>) -> Self {
+    pub fn new(style: Vec<Node>, script: Vec<Node>) -> Self {
         Self { style, script }
     }
 }
@@ -279,25 +215,11 @@ impl AssetInserter {
 impl NodeVisitor for AssetInserter {
     type Error = ();
 
-    fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
+    fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
         if el.tag == "head" {
-            if let Some(node) = self.style.take() {
-                if let Some(mut old) = el.child.take() {
-                    *old = [node, mem::take(&mut old)].into();
-                    el.child = Some(old);
-                } else {
-                    el.child = Some(Box::new(node));
-                }
-            }
+            el.children.append(&mut self.style);
         } else if el.tag == "body" {
-            if let Some(node) = self.script.take() {
-                if let Some(mut old) = el.child.take() {
-                    *old = [mem::take::<Node>(&mut old), node].into();
-                    el.child = Some(old);
-                } else {
-                    el.child = Some(Box::new(node));
-                }
-            }
+            el.children.append(&mut self.script);
         }
 
         Ok(())
@@ -322,7 +244,7 @@ impl SnippetCollector {
 impl NodeVisitor for &mut SnippetCollector {
     type Error = ();
 
-    fn visit_open_tag(&mut self, el: &mut Element) -> Result<(), Self::Error> {
+    fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
         for asset in el.assets.iter_mut() {
             match asset {
                 Asset::StyleSheet(css) => {

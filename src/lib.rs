@@ -14,35 +14,35 @@
 //! use toph::{attr, Node, tag::*};
 //!
 //! let navigation = [("Home", "/about me"), ("Posts", "/posts")];
-//! let mut doc = Node::from([
+//! let mut doc = [
 //!     doctype_,
 //!     html_.with(attr![lang="en"])
 //!         .set([
-//!             head_.set(title_.set(t_("My Webpage"))),
+//!             head_.set([title_.set(["My Webpage"])]),
 //!             body_.set([
 //!                 ul_.with(attr![id="navigation"])
 //!                     .set(
 //!                         navigation.into_iter().map(|(caption, url)| {
-//!                             li_.set(a_.with(attr![href=url]).set(t_(caption)))
+//!                             li_.set([a_.with(attr![href=url]).set([caption])])
 //!                         }).collect::<Vec<_>>()
 //!                     ),
 //!                 h1_.stylesheet("h1 { text-decoration: underline; }")
-//!                     .set(t_("My Webpage"))
+//!                     .set(["My Webpage"])
 //!             ])
 //!         ])
-//! ]);
+//! ];
 //!
 //! assert_eq!(
-//!     doc.write_to_string(true),
+//!     Node::render_pretty(doc),
 //!     r#"<!DOCTYPE html>
 //! <html lang="en">
 //!   <head>
-//!     <style>
-//!       h1 { text-decoration: underline; }
-//!     </style>
 //!     <title>
 //!       My Webpage
 //!     </title>
+//!     <style>
+//!       h1 { text-decoration: underline; }
+//!     </style>
 //!   </head>
 //!   <body>
 //!     <ul id="navigation">
@@ -72,27 +72,27 @@
 //! - Strings are appropriately encoded in HTML, attribute and URL contexts:
 //!
 //! ```
-//! use toph::{attr, tag::*};
+//! use toph::{attr, tag::*, Node};
 //!
 //! let xss_attr_attempt = r#"" onclick="alert(1)""#;
-//! let xss_attempt = t_(r#"<script>alert(1)"#);
+//! let xss_attempt = r#"<script>alert(1)"#;
 //! let url = "/path with space";
 //!
 //! let mut span = span_
 //!     .with(attr![class=xss_attr_attempt])
-//!     .set(xss_attempt);
+//!     .set([xss_attempt]);
 //!
 //! let mut anchor = a_
 //!     .with(attr![href=url])
-//!     .set(t_("A link"));
+//!     .set(["A link"]);
 //!
 //! assert_eq!(
-//!     span.write_to_string(false),
+//!     Node::render([span]),
 //!     r#"<span class="&quot; onclick=&quot;alert(1)&quot;">&lt;script&gt;alert(1)</span>"#
 //! );
 //!
 //! assert_eq!(
-//!     anchor.write_to_string(false),
+//!     Node::render([anchor]),
 //!     r#"<a href="/path%20with%20space">A link</a>"#
 //! );
 //! ```
@@ -103,7 +103,7 @@
 //!   - To include files, use [`include_str`]
 //!
 //! ```
-//! use toph::{tag::*};
+//! use toph::{tag::*, Node};
 //!
 //! let user_input = "1rem";
 //! let css = format!("p {{ font-size: {}; }}", user_input);
@@ -126,7 +126,7 @@
 //!     p_.stylesheet(css).var("font-size", user_input),
 //! ]);
 //! assert_eq!(
-//!   html.write_to_string(true),
+//!   Node::render_pretty([html]),
 //!   r#"<html>
 //!   <head>
 //!     <style>
@@ -147,4 +147,4 @@ pub mod component;
 mod encode;
 mod node;
 
-pub use node::{tag, Element, Fragment, Node, Text};
+pub use node::{tag, Node};

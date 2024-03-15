@@ -233,7 +233,7 @@ macro_rules! attr_impl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tag::*;
+    use crate::{tag::*, Node};
 
     #[test]
     fn inserting_comma_separated_attributes() {
@@ -315,10 +315,10 @@ mod tests {
 
     #[test]
     fn attributes_with_underscores() {
-        let mut html = span_.with(attr![data_hello = "hi", something_something]);
+        let html = span_.with(attr![data_hello = "hi", something_something]);
 
         assert_eq!(
-            html.write_to_string(false),
+            Node::render([html]),
             r#"<span data-hello="hi" something-something></span>"#
         );
     }

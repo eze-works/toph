@@ -6,28 +6,12 @@
 //! You can also create an HTML element [with a custom tag name](crate::tag::custom_).
 //!
 //! Missing from this module are constants for the `_script` & `_style` elements. JavaScript & CSS
-//! snippets are set using [`Node::with`](crate::Node::with) and the
-//! [`attr`](crate::attr#js--css-snippets) macro
-
+//! snippets are set using [`Node::js`] and [`Node::stylesheet`] respectively
 use super::*;
-use attribute::AttributeMap;
-use encode::html;
-use variable::CSSVariableMap;
 
 /// Creates an HTML Node with a custom tag name.
 pub fn custom_(tag: &'static str) -> Node {
-    Node::Element(Element {
-        tag,
-        child: None,
-        attributes: AttributeMap::new(),
-        assets: vec![],
-        variables: CSSVariableMap::new(),
-    })
-}
-
-/// Creates a plain HTML text element
-pub fn t_<I: AsRef<str>>(text: I) -> Node {
-    Node::Text(Text(html(text.as_ref())))
+    Node::element(tag)
 }
 
 macro_rules! impl_tag {
@@ -40,49 +24,21 @@ macro_rules! impl_tag {
         paste::paste!{
             #[allow(non_upper_case_globals)]
             #[doc = $doc]
-            pub const [<$tag _>]: Node = Node::Element(Element {
-                tag: stringify!($tag),
-                attributes: AttributeMap::new(),
-                assets: vec![],
-                child: None,
-                variables: CSSVariableMap::new()
-            });
+            pub const [<$tag _>]: Node = Node::element(stringify!($tag));
         }
     }
 }
 
 /// The <!DOCTYPE> element
 #[allow(non_upper_case_globals)]
-pub const doctype_: Node = Node::Element(Element {
-    tag: "!DOCTYPE html",
-    attributes: AttributeMap::new(),
-    child: None,
-    assets: vec![],
-    variables: CSSVariableMap::new(),
-});
+pub const doctype_: Node = Node::element("!DOCTYPE html");
 
 // script_ & style_ tag constants are omitted from the public API
 #[allow(non_upper_case_globals)]
-pub(crate) const script_: Node = Node::Element(Element {
-    tag: "script",
-    attributes: AttributeMap::new(),
-    assets: vec![],
-    child: None,
-    variables: CSSVariableMap::new(),
-});
-
-/// An empty Node that does not render as anything
-#[allow(non_upper_case_globals)]
-pub const empty_: Node = Node::Text(Text(String::new()));
+pub(crate) const script_: Node = Node::element("script");
 
 #[allow(non_upper_case_globals)]
-pub(crate) const style_: Node = Node::Element(Element {
-    tag: "style",
-    attributes: AttributeMap::new(),
-    child: None,
-    assets: vec![],
-    variables: CSSVariableMap::new(),
-});
+pub(crate) const style_: Node = Node::element("style");
 
 #[rustfmt::skip]
 impl_tag![

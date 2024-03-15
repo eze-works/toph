@@ -63,7 +63,11 @@ impl Display for Ratio {
 /// +---+
 ///   x no gap
 /// ```
-pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
+pub fn stack<I, E>(gap: impl Into<ModularSpacing>, child: I) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-stack")
         .set(child)
         .stylesheet(include_str!("css/stack.css"))
@@ -92,7 +96,11 @@ pub fn stack(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
 /// |   | ...
 /// +---+
 /// ```
-pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
+pub fn cluster<I, E>(gap: impl Into<ModularSpacing>, child: I) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-cluster")
         .set(child)
         .stylesheet(include_str!("css/cluster.css"))
@@ -108,7 +116,11 @@ pub fn cluster(gap: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
 /// |///////////|
 /// +-----------+
 /// ```
-pub fn padded(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Node {
+pub fn padded<I, E>(padding: impl Into<ModularSpacing>, child: I) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-padded")
         .set(child)
         .stylesheet(include_str!("css/padded.css"))
@@ -130,7 +142,11 @@ pub fn padded(padding: impl Into<ModularSpacing>, child: impl Into<Node>) -> Nod
 /// |            +---+             |
 /// +------------------------------+
 /// ```
-pub fn center(child: impl Into<Node>) -> Node {
+pub fn center<I, E>(child: I) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-center")
         .set(child)
         .stylesheet(include_str!("css/center.css"))
@@ -179,20 +195,6 @@ pub fn center(child: impl Into<Node>) -> Node {
 ///
 /// The last argument sets the height of the container as a percentage of the viewport width. It
 /// defaults to 100.
-///
-/// The header, footer and main arguments must correspond to exactly one HTML Element.
-///
-/// So for example, this won't give you what you expect because when a list of Nodes is converted
-/// into a single one, it is actually an HTML [fragment](crate::Fragment).
-/// ```
-/// use toph::{tag::*, component::cover};
-///
-/// let nope = cover([
-///     span_,
-///     span_,
-///     span_
-/// ].into(), None, None, None);
-/// ```
 pub fn cover(
     main: Node,
     header: Option<Node>,
@@ -234,11 +236,15 @@ pub fn cover(
 /// |   |
 /// +---+
 /// ```
-pub fn switcher(
+pub fn switcher<I, E>(
     gap: impl Into<ModularSpacing>,
     threshold: impl Into<Measure>,
-    child: impl Into<Node>,
-) -> Node {
+    child: I,
+) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-switcher")
         .set(child)
         .stylesheet(include_str!("css/switcher.css"))
@@ -275,11 +281,15 @@ pub fn switcher(
 /// |   |  
 /// +---+  
 /// ```
-pub fn fluid_grid(
+pub fn fluid_grid<I, E>(
     ideal_width: impl Into<Measure>,
     gap: impl Into<ModularSpacing>,
-    child: impl Into<Node>,
-) -> Node {
+    child: I,
+) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     custom_("t-fluid-grid")
         .set(child)
         .stylesheet(include_str!("css/fluid-grid.css"))
@@ -290,7 +300,11 @@ pub fn fluid_grid(
 /// A container that acts as a "window" its child element (usually an image)
 ///
 /// The first argument controls the container's aspect ratio.
-pub fn frame(ratio: impl Into<Ratio>, child: impl Into<Node>) -> Node {
+pub fn frame<I, E>(ratio: impl Into<Ratio>, child: I) -> Node
+where
+    I: IntoIterator<Item = E>,
+    E: Into<Node>,
+{
     let ratio = ratio.into().to_string();
     custom_("t-frame")
         .set(child)
