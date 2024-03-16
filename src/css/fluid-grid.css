@@ -1,4 +1,4 @@
-t-fluid-grid {
+.t-fluid-grid {
   display: grid;
   grid-gap: var(--t-fluid-grid-gap);
   grid-template-columns: repeat(auto-fit, minmax(min(var(--t-fluid-grid-min-width), 100%), 1fr));

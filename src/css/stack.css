@@ -1,21 +1,21 @@
-t-stack {
+.t-stack {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
 
-t-stack>* {
+.t-stack>* {
   margin-block: 0;
 }
 
-t-stack>*+* {
+.t-stack>*+* {
   margin-block-start: var(--t-stack-space);
 }
 
-t-stack:only-child {
+.t-stack:only-child {
   block-size: 100%;
 }
 
-t-stack> :nth-child(3) {
+.t-stack> :nth-child(3) {
   margin-block-end: auto;
 }

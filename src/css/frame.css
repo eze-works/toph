@@ -1,4 +1,4 @@
-t-frame {
+.t-frame {
   aspect-ratio: var(--t-frame-ratio);
 
   /*
@@ -13,8 +13,8 @@ t-frame {
 }
 
 
-t-frame>img,
-t-frame>video {
+.t-frame>img,
+.t-frame>video {
   object-fit: cover;
   inline-size: 100%;
   block-size: 100%;

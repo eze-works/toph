@@ -1,18 +1,18 @@
-t-cover {
+.t-cover {
   display: flex;
   flex-direction: column;
   padding: 1rem;
   min-block-size: var(--t-cover-percent);
 }
 
-t-cover>.t-cover-main {
+.t-cover>.t-cover-main {
   margin-block: auto;
 }
 
-t-cover>.t-cover-header {
+.t-cover>.t-cover-header {
   margin-block-end: 1rem;
 }
 
-t-cover>.t-cover-footer {
+.t-cover>.t-cover-footer {
   margin-block-start: 1rem;
 }
