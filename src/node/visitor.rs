@@ -19,12 +19,12 @@ pub fn include_assets(node: &mut Node) {
     let script_fragments = collector
         .js
         .into_iter()
-        .map(|j| script_.dangerously_set_html(j))
+        .map(|j| script_.dangerously_set_html(&j))
         .collect::<Vec<_>>();
     let style_fragments = collector
         .css
         .into_iter()
-        .map(|c| style_.dangerously_set_html(c))
+        .map(|c| style_.dangerously_set_html(&c))
         .collect::<Vec<_>>();
 
     // Insert them into the tree
@@ -228,8 +228,8 @@ impl NodeVisitor for AssetInserter {
 
 // A visitor that collects all css & js snippets from the Node tree
 pub struct SnippetCollector {
-    pub css: HashSet<&'static str>,
-    pub js: HashSet<&'static str>,
+    pub css: HashSet<String>,
+    pub js: HashSet<String>,
 }
 
 impl SnippetCollector {
@@ -248,10 +248,10 @@ impl NodeVisitor for &mut SnippetCollector {
         for asset in el.assets.iter_mut() {
             match asset {
                 Asset::StyleSheet(css) => {
-                    self.css.insert(css);
+                    self.css.insert(css.to_string());
                 }
                 Asset::JavaScript(js) => {
-                    self.js.insert(js);
+                    self.js.insert(js.to_string());
                 }
             }
         }
