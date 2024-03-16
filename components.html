@@ -1,35 +1,50 @@
-<!DOCTYPE html><html><head><style>t-stack {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-t-stack>* {
-  margin-block: 0;
-}
-
-t-stack>*+* {
-  margin-block-start: var(--t-stack-space);
-}
-
-t-stack:only-child {
-  block-size: 100%;
-}
-
-t-stack> :nth-child(3) {
-  margin-block-end: auto;
-}
-</style><style>.card { padding: 1rem; border: 5px solid black; }</style><style>
+<!DOCTYPE html><html><head><style>
 button {
   padding: 0.5rem 1.25rem;
   font-weight: bold;
   border: 2px solid black;
   box-shadow: 2px 2px black;
-}</style><style>t-cluster {
+}</style><style>.card { padding: 1rem; border: 5px solid black; }</style><style>.t-cluster {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--t-cluster-gap);
+  gap: var(--t-cluster-gap-4145495461);
   justify-content: flex-start;
   align-items: center;
 }
-</style></head><body><t-cluster style="--t-cluster-gap: 1.096875rem;"><div class="card"><t-stack style="--t-stack-space: 1.096875rem;"><button>Hello</button><button>World</button></t-stack></div><div class="card"><t-stack style="--t-stack-space: 1.096875rem;"><button>Goodbye</button><button>World</button></t-stack></div></t-cluster></body></html>
+</style><style>.t-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.t-stack>* {
+  margin-block: 0;
+}
+
+.t-stack>*+* {
+  margin-block-start: var(--t-stack-space-2737476295);
+}
+
+.t-stack:only-child {
+  block-size: 100%;
+}
+
+</style><style>.t-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.t-stack>* {
+  margin-block: 0;
+}
+
+.t-stack>*+* {
+  margin-block-start: var(--t-stack-space-3138295301);
+}
+
+.t-stack:only-child {
+  block-size: 100%;
+}
+
+</style></head><body><div class="t-cluster" style="--t-cluster-gap-4145495461: 1.096875rem;"><div class="card"><div class="t-stack" style="--t-stack-space-2737476295: 1.096875rem;"><button>Hello</button><button>World</button></div></div><div class="card"><div class="t-stack" style="--t-stack-space-3138295301: 1.096875rem;"><button>Goodbye</button><button>World</button></div></div></div></body></html>

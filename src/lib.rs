@@ -1,10 +1,10 @@
 //! An API for building HTML documents in Rust.
 //!
-//! - Macro use kept to a minimum (there is just one macro for setting attributes). It's Just Rust
-//! Code.
+//! - It's Just Rust Code.
 //! - [Safely](#xss-prevention) set attributes and content on HTML elements.
 //! - Link [css](crate::Node::stylesheet) & [javascript](crate::Node::js) snippets to HTML
 //! elements, such that those snippets appear when the linked element is displayed.
+//!   - CSS & JS assets are included in the final HTML output.
 //!
 //! The crate also implements [a set of core css components](crate::component) so you don't have to
 //!
@@ -120,6 +120,8 @@
 //!
 //! // Set snippets using string literals
 //! // Parameterize with css custom variables & `var()`
+//! # use fastrand;
+//! # fastrand::seed(1);
 //! let css = "p { font-size: var(--font-size); }";
 //! let mut html = html_.set([
 //!     head_,
@@ -130,10 +132,10 @@
 //!   r#"<html>
 //!   <head>
 //!     <style>
-//!       p { font-size: var(--font-size); }
+//!       p { font-size: var(--font-size-3791187243); }
 //!     </style>
 //!   </head>
-//!   <p style="--font-size: 1rem;">
+//!   <p style="--font-size-3791187243: 1rem;">
 //!   </p>
 //! </html>
 //!"#);

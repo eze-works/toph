@@ -1,7 +1,7 @@
 use super::{tag::*, Asset, Node};
 use std::borrow::Cow;
 use std::collections::btree_map::Entry;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::fmt;
 
 enum Tag<'n> {
@@ -19,7 +19,7 @@ pub fn include_assets(node: &mut Node) {
     let script_fragments = collector
         .js
         .into_iter()
-        .map(|j| script_.dangerously_set_html(&j))
+        .map(|j| script_.dangerously_set_html(j))
         .collect::<Vec<_>>();
     let style_fragments = collector
         .css
@@ -227,16 +227,17 @@ impl NodeVisitor for AssetInserter {
 }
 
 // A visitor that collects all css & js snippets from the Node tree
+// Using btreeset because the iteration order is defined, which makes it possible to test
 pub struct SnippetCollector {
-    pub css: HashSet<String>,
-    pub js: HashSet<String>,
+    pub css: BTreeSet<String>,
+    pub js: BTreeSet<&'static str>,
 }
 
 impl SnippetCollector {
     pub fn new() -> Self {
         Self {
-            css: HashSet::new(),
-            js: HashSet::new(),
+            css: BTreeSet::new(),
+            js: BTreeSet::new(),
         }
     }
 }
@@ -248,10 +249,16 @@ impl NodeVisitor for &mut SnippetCollector {
         for asset in el.assets.iter_mut() {
             match asset {
                 Asset::StyleSheet(css) => {
-                    self.css.insert(css.to_string());
+                    let mut localized_css = String::from(*css);
+                    for (k, v) in el.variables.into_iter() {
+                        let pattern = format!("var(--{})", k);
+                        let replacement = format!("var(--{}-{})", k, v.suffix);
+                        localized_css = localized_css.replace(&pattern, &replacement);
+                    }
+                    self.css.insert(localized_css);
                 }
                 Asset::JavaScript(js) => {
-                    self.js.insert(js.to_string());
+                    self.js.insert(js);
                 }
             }
         }

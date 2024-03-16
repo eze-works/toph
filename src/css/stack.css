@@ -16,6 +16,3 @@
   block-size: 100%;
 }
 
-.t-stack> :nth-child(3) {
-  margin-block-end: auto;
-}
