@@ -21,11 +21,11 @@ impl From<u16> for Measure {
 }
 
 /// Expresses the spacing between elements as modular scale based on a line height of 1.5
-pub struct ModularSpacing(String);
+pub struct ModularSpacing(pub String);
 
 /// Expresses the measure (or width) of elements as a multiple of character width in the current
 /// font.
-pub struct Measure(String);
+pub struct Measure(pub String);
 
 /// A Ratio
 pub struct Ratio(u8, u8);
@@ -68,7 +68,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-stack")
+    div_.with(attr![class = "t-stack"])
         .set(child)
         .stylesheet(include_str!("css/stack.css"))
         .var("t-stack-space", &gap.into().0)
@@ -101,7 +101,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-cluster")
+    div_.with(attr![class = "t-cluster"])
         .set(child)
         .stylesheet(include_str!("css/cluster.css"))
         .var("t-cluster-gap", &gap.into().0)
@@ -121,7 +121,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-padded")
+    div_.with(attr![class = "t-padded"])
         .set(child)
         .stylesheet(include_str!("css/padded.css"))
         .var("t-padded-padding", &padding.into().0)
@@ -147,7 +147,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-center")
+    div_.with(attr![class = "t-center"])
         .set(child)
         .stylesheet(include_str!("css/center.css"))
 }
@@ -205,7 +205,7 @@ pub fn cover(
     let footer = footer.map(|f| f.with(attr![class = "t-cover-footer"]));
     let main = main.with(attr![class = "t-cover-main"]);
     let percent = cover_width.unwrap_or(100);
-    custom_("t-cover")
+    div_.with(attr![class = "t-cover"])
         .var("t-cover-percent", &format!("{}vh", percent))
         .set([header.into(), main, footer.into()])
         .stylesheet(include_str!("css/cover.css"))
@@ -245,7 +245,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-switcher")
+    div_.with(attr![class = "t-switcher"])
         .set(child)
         .stylesheet(include_str!("css/switcher.css"))
         .var("t-switcher-gap", &gap.into().0)
@@ -290,7 +290,7 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
-    custom_("t-fluid-grid")
+    div_.with(attr![class = "t-fluid-grid"])
         .set(child)
         .stylesheet(include_str!("css/fluid-grid.css"))
         .var("t-fluid-grid-min-width", &ideal_width.into().0)
@@ -306,7 +306,7 @@ where
     E: Into<Node>,
 {
     let ratio = ratio.into().to_string();
-    custom_("t-frame")
+    div_.with(attr![class = "t-frame"])
         .set(child)
         .var("t-frame-ratio", &ratio)
         .stylesheet(include_str!("css/frame.css"))
