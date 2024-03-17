@@ -1,22 +1,10 @@
 use crate::encode;
-use fastrand;
 use std::collections::BTreeMap;
 use std::fmt::{Display, Write};
 
-/// The value associated with a variable + a random suffix that will be appended
-/// to the variable name to make it unique to Node instance
-///
-/// This addition is necessary because in the case of a nested component, the
-/// ancestor variable value gets  overridden in descendants.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Entry {
-    pub value: String,
-    pub suffix: u32,
-}
-
 /// Map of custom CSS variable name to value
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct CSSVariableMap(BTreeMap<&'static str, Entry>);
+pub struct CSSVariableMap(BTreeMap<&'static str, String>);
 
 impl CSSVariableMap {
     /// Add a new custom CSS variable to the map
@@ -24,14 +12,7 @@ impl CSSVariableMap {
     /// The value will be attribute encoded  
     pub fn insert(&mut self, key: &'static str, value: &str) {
         let encoded = encode::attr(value);
-        let suffix = fastrand::u32(0..u32::MAX);
-        self.0.insert(
-            key,
-            Entry {
-                value: encoded,
-                suffix,
-            },
-        );
+        self.0.insert(key, encoded);
     }
 
     /// Create a new variable map
@@ -46,8 +27,8 @@ impl CSSVariableMap {
 }
 
 impl<'a> IntoIterator for &'a CSSVariableMap {
-    type Item = (&'a &'static str, &'a Entry);
-    type IntoIter = std::collections::btree_map::Iter<'a, &'static str, Entry>;
+    type Item = (&'a &'static str, &'a String);
+    type IntoIter = std::collections::btree_map::Iter<'a, &'static str, String>;
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
     }
@@ -60,7 +41,7 @@ impl Display for CSSVariableMap {
         }
         let mut result = String::new();
         for (k, v) in self.0.iter() {
-            write!(result, "--{}-{}: {};", k, v.suffix, v.value)?;
+            write!(result, "--{}: {};", k, v)?;
         }
         write!(f, "{}", result)
     }

@@ -229,7 +229,7 @@ impl NodeVisitor for AssetInserter {
 // A visitor that collects all css & js snippets from the Node tree
 // Using btreeset because the iteration order is defined, which makes it possible to test
 pub struct SnippetCollector {
-    pub css: BTreeSet<String>,
+    pub css: BTreeSet<&'static str>,
     pub js: BTreeSet<&'static str>,
 }
 
@@ -249,13 +249,7 @@ impl NodeVisitor for &mut SnippetCollector {
         for asset in el.assets.iter_mut() {
             match asset {
                 Asset::StyleSheet(css) => {
-                    let mut localized_css = String::from(*css);
-                    for (k, v) in el.variables.into_iter() {
-                        let pattern = format!("var(--{})", k);
-                        let replacement = format!("var(--{}-{})", k, v.suffix);
-                        localized_css = localized_css.replace(&pattern, &replacement);
-                    }
-                    self.css.insert(localized_css);
+                    self.css.insert(css);
                 }
                 Asset::JavaScript(js) => {
                     self.js.insert(js);
