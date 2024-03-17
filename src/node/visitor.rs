@@ -24,7 +24,7 @@ pub fn include_assets(node: &mut Node) {
     let style_fragments = collector
         .css
         .into_iter()
-        .map(|c| style_.dangerously_set_html(&c))
+        .map(|c| style_.dangerously_set_html(c))
         .collect::<Vec<_>>();
 
     // Insert them into the tree
