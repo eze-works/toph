@@ -199,6 +199,19 @@ impl Node {
     /// This is useful for "parameterizing" styles. You can call this method multiple times to
     /// define additional variables.
     ///
+    /// If you are writing a component with declarations affecting descendant rules like ...
+    ///
+    /// ```text
+    /// your-component > * {
+    ///     blah-blah: var(--your-variable);
+    /// }
+    /// ```
+    ///
+    /// ... then you _probably_ intended to call this method on the child nodes.
+    ///
+    /// Because CSS ... uhh, cascades, calling this method on the parent instead of the child nodes
+    /// can cause odd interactions to happen when you nest one `your-component` inside another.
+    ///
     /// # Example
     ///
     /// ```
