@@ -1,12 +1,10 @@
 # Toph
 
-🏗️ WIP 🏗️ 
-
 Server-side html templating in Rust.
 
 Here is an example to whet your appetite:
 
-![HTML Output](./assets/html-output.png)
+![HTML Output](./html-output.png)
 
 ```rust
 use toph::component::{stack, cluster};
