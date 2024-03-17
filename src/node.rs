@@ -38,7 +38,7 @@ impl Node {
         }
     }
 
-    // NOTE: For consistency, the API should NEVER return a Node with no tag.
+    // NOTE: For consistency, the API should avoid returning a Node with no tag.
     // Text nodes can't have attributes, variables, or children when printed out
     const fn text(text: String) -> Self {
         Node {
