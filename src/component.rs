@@ -10,7 +10,7 @@ impl From<u8> for ModularSpacing {
         if value == 0 {
             return ModularSpacing(String::new());
         }
-        ModularSpacing(format!("{}rem", 0.325 * 1.5f64.powi(value as i32)))
+        ModularSpacing(format!("{}rem", 0.325 * 1.5f32.powi(value as i32)))
     }
 }
 
@@ -68,10 +68,14 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
+    let gap = &gap.into().0;
+    let children = child
+        .into_iter()
+        .map(|c| c.into().var("t-stack-space", gap));
+
     div_.with(attr![class = "t-stack"])
-        .set(child)
+        .set(children)
         .stylesheet(include_str!("css/stack.css"))
-        .var("t-stack-space", &gap.into().0)
 }
 
 /// A container with children that are evenly spaced out horizontally
@@ -245,11 +249,14 @@ where
     I: IntoIterator<Item = E>,
     E: Into<Node>,
 {
+    let threshold = &threshold.into().0;
+    let children = child
+        .into_iter()
+        .map(|c| c.into().var("t-switcher-threshold", threshold));
     div_.with(attr![class = "t-switcher"])
-        .set(child)
+        .set(children)
         .stylesheet(include_str!("css/switcher.css"))
         .var("t-switcher-gap", &gap.into().0)
-        .var("t-switcher-threshold", &threshold.into().0)
 }
 
 /// A responsive Grid.

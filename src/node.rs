@@ -201,12 +201,7 @@ impl Node {
     ///
     /// # Example
     ///
-    /// Variable names are suffixed with a random number to prevent descendant nested elements from
-    /// overriding ancestor values
-    ///
     /// ```
-    /// # use fastrand;
-    /// # fastrand::seed(1);
     /// use toph::{tag::*, Node};
     ///
     /// let css = "div { color: var(--text-color); border: 1px solid var(--div-color); }";
@@ -228,16 +223,13 @@ impl Node {
     /// r#"<html>
     ///   <head>
     ///     <style>
-    ///       div { color: var(--text-color-3791187243); border: 1px solid var(--div-color-479898943); }
-    ///     </style>
-    ///     <style>
-    ///       div { color: var(--text-color-787217118); border: 1px solid var(--div-color-4275851145); }
+    ///       div { color: var(--text-color); border: 1px solid var(--div-color); }
     ///     </style>
     ///   </head>
     ///   <body>
-    ///     <div style="--div-color-479898943: black;--text-color-3791187243: white;">
+    ///     <div style="--div-color: black;--text-color: white;">
     ///     </div>
-    ///     <div style="--div-color-4275851145: pink;--text-color-787217118: brown;">
+    ///     <div style="--div-color: pink;--text-color: brown;">
     ///     </div>
     ///   </body>
     /// </html>

@@ -120,8 +120,6 @@
 //!
 //! // Set snippets using string literals
 //! // Parameterize with css custom variables & `var()`
-//! # use fastrand;
-//! # fastrand::seed(1);
 //! let css = "p { font-size: var(--font-size); }";
 //! let mut html = html_.set([
 //!     head_,
@@ -132,10 +130,10 @@
 //!   r#"<html>
 //!   <head>
 //!     <style>
-//!       p { font-size: var(--font-size-3791187243); }
+//!       p { font-size: var(--font-size); }
 //!     </style>
 //!   </head>
-//!   <p style="--font-size-3791187243: 1rem;">
+//!   <p style="--font-size: 1rem;">
 //!   </p>
 //! </html>
 //!"#);
