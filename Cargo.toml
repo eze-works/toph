@@ -1,11 +1,12 @@
 [package]
 name = "toph"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
 description = "Simple server-side html generation"
 repository = "https://git.sr.ht/~eanyanwu/toph"
+categories = ["template-engine"]
 
 keywords = ["template", "html", "layout"]
 
