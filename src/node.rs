@@ -1,29 +1,19 @@
 pub mod attribute;
 pub mod tag;
-mod variable;
 pub mod visitor;
 
 use crate::encode;
 use attribute::AttributeMap;
-use variable::CSSVariableMap;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum Asset {
-    StyleSheet(&'static str),
-    JavaScript(&'static str),
-}
 
 /// An HTML Node. All [tag functions](crate::tag) are instances of this type.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
     // When `tag` is not empty, this is an element node
     tag: &'static str,
-    // When `tag` is empty, this isa a text node
+    // When `tag` is empty, this is a text node
     text: String,
     attributes: AttributeMap,
-    variables: CSSVariableMap,
     children: Vec<Node>,
-    assets: Vec<Asset>,
 }
 
 impl Node {
@@ -32,9 +22,7 @@ impl Node {
             tag,
             text: String::new(),
             attributes: AttributeMap::new(),
-            variables: CSSVariableMap::new(),
             children: vec![],
-            assets: vec![],
         }
     }
 
@@ -45,9 +33,7 @@ impl Node {
             tag: "",
             text,
             attributes: AttributeMap::new(),
-            variables: CSSVariableMap::new(),
             children: vec![],
-            assets: vec![],
         }
     }
 
@@ -131,132 +117,6 @@ impl Node {
         self
     }
 
-    /// Links an inline css stylesheet to the Node
-    ///
-    /// The stylesheet will be included verbatim in a `<style>` element when this Node is in a tree
-    /// with both `<html>` & `<head>` tags
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use toph::{tag::*, Node};
-    ///
-    /// let html = div_.stylesheet("div { border: 1px solid black; }");
-    /// assert_eq!(Node::render([html]), "<div></div>");
-    ///
-    /// let html = html_.set([
-    ///     head_,
-    ///     div_.stylesheet("div { border: 1px solid black; }")
-    /// ]);
-    /// assert_eq!(
-    ///     Node::render([html]),
-    ///     "<html><head><style>div { border: 1px solid black; }</style></head><div></div></html>"
-    /// );
-    /// ```
-    /// # Note
-    ///
-    /// CSS snippets are de-duplicated; Including the same snippet multiple times  will
-    /// still result in a single `<style>` element
-    pub fn stylesheet(mut self, css: &'static str) -> Self {
-        self.assets.push(Asset::StyleSheet(css));
-        self
-    }
-
-    /// Links a JavaScript snippet to the Node
-    ///
-    /// The javascript snippet will be included verbatim as a `<script>` element when this Node is
-    /// in a tree with both `<html>` & `<body>` tags
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use toph::{tag::*, Node};
-    ///
-    /// let html = div_.js("console.log()");
-    /// assert_eq!(Node::render([html]), "<div></div>");
-    ///
-    /// let html = html_.set([
-    ///     body_.set([div_.js("console.log()")])
-    /// ]);
-    ///
-    /// assert_eq!(
-    ///     Node::render([html]),
-    ///     "<html><body><div></div><script>console.log()</script></body></html>"
-    /// );
-    /// ```
-    ///
-    /// # Note:
-    ///
-    /// JavaScript snippets are de-duplicated; Including the same snippet multiple times  will
-    /// still result in a single `<script>` element
-    pub fn js(mut self, js: &'static str) -> Self {
-        self.assets.push(Asset::JavaScript(js));
-        self
-    }
-
-    /// Define a CSS variable for this Node
-    ///
-    /// This is useful for "parameterizing" styles. You can call this method multiple times to
-    /// define additional variables.
-    ///
-    /// If you are writing a component with declarations affecting descendant rules like ...
-    ///
-    /// ```text
-    /// your-component > * {
-    ///     blah-blah: var(--your-variable);
-    /// }
-    /// ```
-    ///
-    /// ... then you _probably_ intended to call this method on the child nodes.
-    ///
-    /// Because CSS ... uhh, cascades, calling this method on the parent instead of the child nodes
-    /// can cause odd interactions to happen when you nest one `your-component` inside another.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use toph::{tag::*, Node};
-    ///
-    /// let css = "div { color: var(--text-color); border: 1px solid var(--div-color); }";
-    /// let html = html_.set([
-    ///     head_,
-    ///     body_.set([
-    ///         div_.stylesheet(css)
-    ///             .var("text-color", "white")
-    ///             .var("div-color", "black"),
-    ///
-    ///         div_.stylesheet(css)
-    ///             .var("text-color", "brown")
-    ///             .var("div-color", "pink"),
-    ///     ])
-    /// ]);
-    ///
-    /// assert_eq!(
-    ///     Node::render_pretty([html]),
-    /// r#"<html>
-    ///   <head>
-    ///     <style>
-    ///       div { color: var(--text-color); border: 1px solid var(--div-color); }
-    ///     </style>
-    ///   </head>
-    ///   <body>
-    ///     <div style="--div-color: black;--text-color: white;">
-    ///     </div>
-    ///     <div style="--div-color: pink;--text-color: brown;">
-    ///     </div>
-    ///   </body>
-    /// </html>
-    /// "#)
-    /// ```
-    ///
-    /// # Notes:
-    /// - Double dashes are automatically prepended to the name when displayed
-    /// - The value is always attribute encoded
-    pub fn var(mut self, name: &'static str, value: &str) -> Self {
-        self.variables.insert(name, value);
-        self
-    }
-
     /// Sets this Element's children
     ///
     /// You can pass anything that can be converted into an iterator of `Nodes`
@@ -292,23 +152,24 @@ impl Node {
         self
     }
 
-    /// Append `html` verbatim as a child of this element. This skip html encoding.
+    /// Append `html` verbatim as a child of this element. This skips html encoding.
     ///
     /// ```
     /// use toph::{Node, tag::*};
-    /// let html = span_.dangerously_set_html("<script>alert(1)</script>");
+    /// let html = span_.set_unescaped("<script>alert(1)</script>");
     ///
     /// assert_eq!(
     ///     Node::render([html]),
     ///     "<span><script>alert(1)</script></span>"
     /// );
     /// ```
-    pub fn dangerously_set_html(mut self, html: &str) -> Self {
+    pub fn set_unescaped(mut self, html: impl Into<String>) -> Self {
         let child_text_element = Node::text(html.into());
         self.children.push(child_text_element);
         self
     }
 }
+
 impl Node {
     /// Converts the list of nodes to an HTML string
     ///
@@ -342,10 +203,6 @@ impl Node {
         let mut buf = String::new();
         for node in nodes {
             let mut node = node.into();
-            if node.tag == "html" {
-                visitor::include_assets(&mut node);
-            }
-
             let writer = visitor::HtmlStringWriter::new(&mut buf, indent);
             visitor::visit_nodes(&mut node, writer).expect("printing to a string should not fail");
         }
@@ -448,66 +305,6 @@ mod tests {
         assert_html(
             [span_.with(attr![data_custom = "hello"])],
             r#"<span data-custom="hello"></span>"#,
-        );
-    }
-
-    #[test]
-    fn including_assets() {
-        // css is appended to the head element
-        assert_html(
-            [html_.set([head_.set([title_]), body_.stylesheet("some css")])],
-            r#"<html><head><title></title><style>some css</style></head><body></body></html>"#,
-        );
-        // css is added if when head element is empty
-        assert_html(
-            [html_.set([head_, body_.stylesheet("some css")])],
-            r#"<html><head><style>some css</style></head><body></body></html>"#,
-        );
-        // no css is included when head is absent
-        assert_html(
-            [html_.set([body_.stylesheet("some css")])],
-            "<html><body></body></html>",
-        );
-        // no css is included when html is absent
-        assert_html([body_.stylesheet("some css")], "<body></body>");
-
-        // css is deduplicated
-        assert_html(
-            [html_.stylesheet("a").set([head_, body_.stylesheet("a")])],
-            "<html><head><style>a</style></head><body></body></html>",
-        );
-
-        // js is appended to the body element
-        assert_html(
-            [html_.set([body_.js("some js").set([span_])])],
-            "<html><body><span></span><script>some js</script></body></html>",
-        );
-
-        // js is added when body element is empty
-        assert_html(
-            [html_.set([body_.js("some js")])],
-            "<html><body><script>some js</script></body></html>",
-        );
-
-        // no js is added when body is absent
-        assert_html(
-            [html_.set([span_.js("some js")])],
-            "<html><span></span></html>",
-        );
-
-        // no js is added when html is absent
-        assert_html([body_.js("some js")], "<body></body>");
-
-        // js is deduplicated
-        assert_html(
-            [html_.js("js").set([body_.js("js")])],
-            "<html><body><script>js</script></body></html>",
-        );
-
-        // order in which assets are appended does not matter
-        assert_html(
-            [html_.set([head_, body_]).js("js").stylesheet("css")],
-            "<html><head><style>css</style></head><body><script>js</script></body></html>",
         );
     }
 }

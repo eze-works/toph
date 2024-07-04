@@ -4,9 +4,6 @@
 //! tags they generate.
 //!
 //! You can also create an HTML element [with a custom tag name](crate::tag::custom_).
-//!
-//! Missing from this module are constants for the `_script` & `_style` elements. JavaScript & CSS
-//! snippets are set using [`Node::js`] and [`Node::stylesheet`] respectively
 use super::*;
 
 /// Creates an HTML Node with a custom tag name.
@@ -33,19 +30,12 @@ macro_rules! impl_tag {
 #[allow(non_upper_case_globals)]
 pub const doctype_: Node = Node::element("!DOCTYPE html");
 
-// script_ & style_ tag constants are omitted from the public API
-#[allow(non_upper_case_globals)]
-pub(crate) const script_: Node = Node::element("script");
-
-#[allow(non_upper_case_globals)]
-pub(crate) const style_: Node = Node::element("style");
-
 #[rustfmt::skip]
 impl_tag![
     // main root
     html,
     // document metadata
-    base, head, link, meta, /*style,*/ title,
+    base, head, link, meta, style, title,
     // sectioning root
     body,
     // content sectioning
@@ -62,7 +52,7 @@ impl_tag![
     // svg and mathml
     svg, math,
     // scripting
-    canvas, /* script, */ noscript, 
+    canvas,  script,  noscript, 
     // demarcating edits
     del, ins,
     // table content

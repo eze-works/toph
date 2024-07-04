@@ -1,4 +1,4 @@
-use super::{tag::*, Asset, Node};
+use super::{tag::*, Node};
 use std::borrow::Cow;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeSet;
@@ -9,30 +9,8 @@ enum Tag<'n> {
     Close(&'static str),
 }
 
-// Extracts all css & javascript assets from the subtrees and places them in <style> & <script>
-// nodes
-pub fn include_assets(node: &mut Node) {
-    // Get assets
-    let mut collector = SnippetCollector::new();
-    visit_nodes(node, &mut collector).expect("collecting assets does not fail");
-
-    let script_fragments = collector
-        .js
-        .into_iter()
-        .map(|j| script_.dangerously_set_html(j))
-        .collect::<Vec<_>>();
-    let style_fragments = collector
-        .css
-        .into_iter()
-        .map(|c| style_.dangerously_set_html(c))
-        .collect::<Vec<_>>();
-
-    // Insert them into the tree
-    let inserter = AssetInserter::new(style_fragments, script_fragments);
-    visit_nodes(node, inserter).expect("inserting nodes does not fail");
-}
-
 // The visitor pattern[1] is used for traversing a Node tree.
+//
 // [1]: https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
 pub trait NodeVisitor {
     type Error;
@@ -154,19 +132,6 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
 
     fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
         write!(self.html, "{}<{}", self.current_indent(), el.tag)?;
-        // css variables are set using the `style` attribute
-        // merge them with any existing style attribute
-        if !el.variables.is_empty() {
-            match el.attributes.entry("style") {
-                Entry::Vacant(v) => {
-                    v.insert(el.variables.to_string());
-                }
-                Entry::Occupied(mut o) => {
-                    let existing = o.get_mut();
-                    *existing += &el.variables.to_string();
-                }
-            }
-        }
         write!(self.html, "{}", el.attributes)?;
         write!(self.html, ">{}", self.newline())?;
         if !el.is_void() {
@@ -196,66 +161,6 @@ impl<W: fmt::Write> NodeVisitor for HtmlStringWriter<W> {
             text,
             self.newline()
         )?;
-        Ok(())
-    }
-}
-
-// A visitor that inserts style & script nodes into a node tree
-pub struct AssetInserter {
-    style: Vec<Node>,
-    script: Vec<Node>,
-}
-
-impl AssetInserter {
-    pub fn new(style: Vec<Node>, script: Vec<Node>) -> Self {
-        Self { style, script }
-    }
-}
-
-impl NodeVisitor for AssetInserter {
-    type Error = ();
-
-    fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
-        if el.tag == "head" {
-            el.children.append(&mut self.style);
-        } else if el.tag == "body" {
-            el.children.append(&mut self.script);
-        }
-
-        Ok(())
-    }
-}
-
-// A visitor that collects all css & js snippets from the Node tree
-// Using btreeset because the iteration order is defined, which makes it possible to test
-pub struct SnippetCollector {
-    pub css: BTreeSet<&'static str>,
-    pub js: BTreeSet<&'static str>,
-}
-
-impl SnippetCollector {
-    pub fn new() -> Self {
-        Self {
-            css: BTreeSet::new(),
-            js: BTreeSet::new(),
-        }
-    }
-}
-
-impl NodeVisitor for &mut SnippetCollector {
-    type Error = ();
-
-    fn visit_open_tag(&mut self, el: &mut Node) -> Result<(), Self::Error> {
-        for asset in el.assets.iter_mut() {
-            match asset {
-                Asset::StyleSheet(css) => {
-                    self.css.insert(css);
-                }
-                Asset::JavaScript(js) => {
-                    self.js.insert(js);
-                }
-            }
-        }
         Ok(())
     }
 }

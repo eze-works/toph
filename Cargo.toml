@@ -1,19 +1,14 @@
 [package]
 name = "toph"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
-description = "Simple server-side html generation"
-repository = "https://git.sr.ht/~eanyanwu/toph"
+description = "Simple HTML generation library"
+repository = "https://github.com/eze-works/toph"
 categories = ["template-engine"]
 
-keywords = ["template", "html", "layout"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[badges]
-maintenance = { status = "deprecated" }
+keywords = ["template", "html"]
 
 [dependencies]
 fastrand = "2.0.1"

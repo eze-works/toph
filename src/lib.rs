@@ -2,11 +2,6 @@
 //!
 //! - It's Just Rust Code.
 //! - [Safely](#xss-prevention) set attributes and content on HTML elements.
-//! - Link [css](crate::Node::stylesheet) & [javascript](crate::Node::js) snippets to HTML
-//! elements, such that those snippets appear when the linked element is displayed.
-//!   - CSS & JS assets are included in the final HTML output.
-//!
-//! The crate also implements [a set of core css components](crate::component) so you don't have to
 //!
 //! ## Example
 //!
@@ -26,8 +21,7 @@
 //!                             li_.set([a_.with(attr![href=url]).set([caption])])
 //!                         }).collect::<Vec<_>>()
 //!                     ),
-//!                 h1_.stylesheet("h1 { text-decoration: underline; }")
-//!                     .set(["My Webpage"])
+//!                 h1_.set(["My Webpage"])
 //!             ])
 //!         ])
 //! ];
@@ -40,9 +34,6 @@
 //!     <title>
 //!       My Webpage
 //!     </title>
-//!     <style>
-//!       h1 { text-decoration: underline; }
-//!     </style>
 //!   </head>
 //!   <body>
 //!     <ul id="navigation">
@@ -67,9 +58,7 @@
 //!
 //! ## XSS Prevention
 //!
-//! A couple measures are taken to protect against Cross-site scripting attacks (XSS):
-//!
-//! - Strings are appropriately encoded in HTML, attribute and URL contexts:
+//! Strings are appropriately encoded in HTML, attribute and URL contexts:
 //!
 //! ```
 //! use toph::{attr, tag::*, Node};
@@ -96,54 +85,10 @@
 //!     r#"<a href="/path%20with%20space">A link</a>"#
 //! );
 //! ```
-//!
-//! - JavaScript & CSS snippets can only be set using literal (i.e. `'static`) string slices.
-//!   - It is frequently useful to parameterize styles though, so the [`var`](crate::Node::var)
-//!   method is provided.
-//!   - To include files, use [`include_str`]
-//!
-//! ```
-//! use toph::{tag::*, Node};
-//!
-//! let user_input = "1rem";
-//! let css = format!("p {{ font-size: {}; }}", user_input);
-//!
-//! // This does not compile
-//! // let mut html = html_.set([ head_, p_.stylesheet(css)]);
-//! // Neither does this
-//! // let mut html = html_.set([ head_, p_.stylesheet(&css)]);
-//!
-//! // Technically, you _could_ leak the string...
-//! // Why you would want to leak memory for this purpose is beyond me.
-//! // You are on your own.
-//! // let mut html = html_.set([ head_, p_.stylesheet(css.leak())]);
-//!
-//! // Set snippets using string literals
-//! // Parameterize with css custom variables & `var()`
-//! let css = "p { font-size: var(--font-size); }";
-//! let mut html = html_.set([
-//!     head_,
-//!     p_.stylesheet(css).var("font-size", user_input),
-//! ]);
-//! assert_eq!(
-//!   Node::render_pretty([html]),
-//!   r#"<html>
-//!   <head>
-//!     <style>
-//!       p { font-size: var(--font-size); }
-//!     </style>
-//!   </head>
-//!   <p style="--font-size: 1rem;">
-//!   </p>
-//! </html>
-//!"#);
-//!
-//! ```
 
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-pub mod component;
 mod encode;
 mod node;
 
