@@ -24,6 +24,17 @@ impl From<(&'static str, bool)> for Attribute {
     }
 }
 
+impl std::fmt::Display for Attribute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Attribute::Regular(k, v) => write!(f, " {}=\"{}\"", k.replace('_', "-"), v),
+            Attribute::Bool(k, present) if *present => write!(f, " {}", k.replace('_', "-")),
+            Attribute::Bool(k, present) => Ok(())
+        }
+    }
+}
+
+#[doc(hidden)]
 #[macro_export]
 macro_rules! attributes {
     ($($name:ident : $value:expr),*) => {{

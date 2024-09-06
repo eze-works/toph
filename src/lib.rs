@@ -1,4 +1,3 @@
-// #![feature(trace_macros)]
 mod attribute;
 mod html;
 mod node;

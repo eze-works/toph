@@ -8,7 +8,7 @@ macro_rules! html_impl {
         let tag = stringify!($tag);
         let attributes = $crate::attributes!($($attributes)*);
         #[allow(unused_mut)]
-        let mut element = $crate::Node::new_element(tag, attributes.to_vec());
+        let mut element = $crate::Node::element(tag, attributes.to_vec());
         $crate::html_impl!((&mut element) $($children)*);
         $parent.append_child(element);
         $crate::html_impl!(($parent) $($rest)*);
@@ -17,14 +17,14 @@ macro_rules! html_impl {
     // div { <children> }
     (($parent:expr) $tag:ident {$($children:tt)*} $($rest:tt)*) => {
         let tag = stringify!($tag);
-        let mut element = $crate::Node::new_element(tag, vec![]);
+        let mut element = $crate::Node::element(tag, vec![]);
         $crate::html_impl!((&mut element) $($children)*);
         $parent.append_child(element);
         $crate::html_impl!(($parent) $($rest)*);
     };
 
-    // <expression>;
-    (($parent:expr) $expression:expr ; $($rest:tt)*) => {
+    // (<expression>)
+    (($parent:expr) ($expression:expr) $($rest:tt)*) => {
         $parent.append_child($crate::Node::from($expression));
         $crate::html_impl!(($parent) $($rest)*);
     };
@@ -33,7 +33,7 @@ macro_rules! html_impl {
 #[macro_export]
 macro_rules! html {
     ($($input:tt)*) => {{
-        let mut fragment = $crate::Node::new_fragment();
+        let mut fragment = $crate::Node::fragment();
         $crate::html_impl!((&mut fragment) $($input)*);
         fragment
     }};
@@ -43,27 +43,39 @@ macro_rules! html {
 mod tests {
     use super::*;
 
+    fn navigation() -> [crate::Node; 2] {
+        let navigation = [("Home", "/about me"), ("Posts", "/posts")];
+        navigation
+            .map(|(caption, url)| {
+                html! {
+                    li [href: url] {
+                        (caption)
+                    }
+                }
+            })
+    }
+
     #[test]
     fn testing() {
-        //trace_macros!(true);
+        let component = navigation();
         let html = html! {
             html {
                 head {
                     title {
-                        "Hello world";
+                        ("Hello world")
                     }
                 }
                 body {
+                    (component)
                     div {
                         button {
                             i[class: "fa fa-facebook"] {}
-                            "Submit";
+                            ("Submit")
                         }
                     }
                 }
             }
         };
-        //trace_macros!(false);
 
         println!("{:#?}", html);
     }

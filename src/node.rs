@@ -29,7 +29,7 @@ pub enum Node {
 }
 
 impl Node {
-    pub fn new_element(tag: &'static str, attributes: Vec<Attribute>) -> Node {
+    pub fn element(tag: &'static str, attributes: Vec<Attribute>) -> Node {
         Node::Element(Element {
             tag,
             attributes,
@@ -37,12 +37,12 @@ impl Node {
         })
     }
 
-    pub fn new_fragment() -> Node {
+    pub fn fragment() -> Node {
         Node::Fragment(Fragment(vec![]))
     }
 
-    pub fn new_text(text: String) -> Node {
-        Node::Text(Text(text))
+    pub fn text(text: impl AsRef<str>) -> Node {
+        Node::Text(Text(text.as_ref().to_string()))
     }
 
     pub fn append_child(&mut self, child: Node) {
@@ -54,8 +54,35 @@ impl Node {
     }
 }
 
-impl<T: std::fmt::Display> From<T> for Node {
-    fn from(value: T) -> Self {
-        Node::new_text(value.to_string())
+impl From<&str> for Node {
+    fn from(value: &str) -> Self {
+        Node::Text(Text(value.to_string()))
     }
 }
+
+impl From<String> for Node {
+    fn from(value: String) -> Self {
+        Node::Text(Text(value))
+    }
+}
+
+
+impl From<Vec<Node>> for Node {
+    fn from(value: Vec<Node>) -> Self {
+        Node::Fragment(Fragment(value))
+    }
+}
+
+macro_rules! impl_from_array {
+    ($($count:literal)*) => {
+        $(
+            impl From<[Node; $count]> for Node {
+                fn from(value: [Node; $count]) -> Self {
+                    Node::Fragment(Fragment(value.to_vec()))
+                }
+            }
+        )*
+    }
+}
+
+impl_from_array! { 0 1 2 3 4 5 6 7 8 9 10 11 12 }
