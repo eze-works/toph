@@ -88,6 +88,9 @@ impl Node {
 
     /// Converts the Node to an HTML string
     pub fn serialize(&self) -> String {
+        // Serialization is done by traversing the tree in a depth-first manner.
+        // Open tags are serialized on the way down, closing tags are serialized on the way up
+
         let mut buffer = String::new();
         let mut visit_later = vec![Tag::Open(self)];
 
