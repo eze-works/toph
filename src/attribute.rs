@@ -1,3 +1,5 @@
+use crate::encode;
+
 #[derive(Debug, Clone)]
 pub enum Attribute {
     /// A regular HTML attribute 
@@ -27,9 +29,9 @@ impl From<(&'static str, bool)> for Attribute {
 impl std::fmt::Display for Attribute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Attribute::Regular(k, v) => write!(f, " {}=\"{}\"", k.replace('_', "-"), v),
+            Attribute::Regular(k, v) => write!(f, " {}=\"{}\"", k.replace('_', "-"), encode::attr(v)),
             Attribute::Bool(k, present) if *present => write!(f, " {}", k.replace('_', "-")),
-            Attribute::Bool(k, present) => Ok(())
+            Attribute::Bool(_, _) => Ok(())
         }
     }
 }
