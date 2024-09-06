@@ -1,9 +1,13 @@
 mod attribute;
+mod encode;
 mod html;
 mod node;
-mod encode;
 
-
+#[doc(hidden)]
 pub use attribute::Attribute;
 
-pub use node::{Element, Fragment, Node, Text, raw_text};
+pub use node::{raw_text, Element, Fragment, Node, Text};
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDocTests;

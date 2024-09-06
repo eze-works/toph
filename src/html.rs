@@ -31,6 +31,98 @@ macro_rules! html_impl {
     };
 }
 
+/// This macro implements a syntax for creating HTML [`Node`](crate::Node)s.
+///
+/// # Syntax
+///
+/// An identifier followed by curly braces represents an HTML element:
+///
+/// ```
+/// # use toph::html;
+/// assert_eq!(
+///     html! {
+///         div {}
+///     }.serialize(),
+///     "<div></div>",
+/// );
+/// ```
+///
+/// Elements can have attributes. These are expressed as a key-value list seperated by commas:
+///
+/// ```
+/// # use toph::html;
+/// assert_eq!(
+///     html! {
+///         div [class: "container", id: "main"] {}
+///     }.serialize(),
+///     "<div class=\"container\" id=\"main\"></div>"
+/// );
+/// ```
+///
+/// An attribute with a boolean value is treated as an [HTML boolean attribute](https://developer.mozilla.org/en-US/docs/Glossary/Boolean/HTML)
+///
+/// ```
+/// # use toph::html;
+/// assert_eq!(
+///     html! {
+///         div [async: false, readonly: true] {}
+///     }.serialize(),
+///     "<div readonly></div>"
+/// );
+/// ```
+///
+/// Elements can have children:
+///
+/// ```
+/// # use toph::html;
+/// assert_eq!(
+///     html! {
+///         div {
+///             span {
+///                 p {
+///                 }
+///             }
+///         }
+///     }.serialize(),
+///     "<div><span><p></p></span></div>"
+/// );
+/// ```
+///
+/// A child may also be a Rust expression that returns a string, a `Node` or a list of `Node`s.
+/// Expressions should be terminated with a semi-colon:
+///
+/// ```
+/// # use toph::html;
+/// let world = html! { span { " world!"; } };
+/// let bye = ["bye", "now"];
+/// assert_eq!(
+///     html! {
+///         div {
+///             "hello";
+///             world;
+///             bye.map(|s| html! { s; });
+///         }
+///     }.serialize(),
+///     "<div>hello<span> world!</span>byenow</div>"
+/// );
+/// ```
+///
+/// Text is automatically HTML-escaped.
+/// You can opt-out with [`raw_text`](crate::raw_text).
+/// Double quotes in attribute values are also escaped.
+///
+/// ```
+/// # use toph::{raw_text, html};
+/// assert_eq!(
+///     html! {
+///         div[class: "\""] {
+///             "<span>";
+///             raw_text("<span>");
+///         }
+///     }.serialize(),
+///     "<div class=\"&quot;\">&lt;span&gt;<span></div>"
+/// );
+/// ```
 #[macro_export]
 macro_rules! html {
     ($($input:tt)*) => {{
@@ -56,7 +148,8 @@ mod tests {
         assert_eq!(
             html! {
                 custom_element {}
-            }.serialize(),
+            }
+            .serialize(),
             "<custom-element></custom-element>"
         );
     }
@@ -84,7 +177,8 @@ mod tests {
         assert_eq!(
             html! {
                 div [key: "a \"templating\" engine"] {}
-            }.serialize(),
+            }
+            .serialize(),
             "<div key=\"a &quot;templating&quot; engine\"></div>"
         );
     }
@@ -110,15 +204,17 @@ mod tests {
                 img {
                     p {}
                 }
-            }.serialize(),
+            }
+            .serialize(),
             "<img>"
         );
 
         // void elements are case-insensitively recognized
-        assert_eq! (
+        assert_eq!(
             html! {
                 IMG { p {} }
-            }.serialize(),
+            }
+            .serialize(),
             "<IMG>"
         );
     }
@@ -128,7 +224,8 @@ mod tests {
         assert_eq!(
             html! {
                 DOCtype {}
-            }.serialize(),
+            }
+            .serialize(),
             "<!doctype>"
         );
     }
@@ -136,12 +233,13 @@ mod tests {
     #[test]
     fn escaping_strings() {
         use crate::raw_text;
-        assert_eq! (
+        assert_eq!(
             html! {
                 "foo";
                 "<span>";
                 raw_text("<span>");
-            }.serialize(),
+            }
+            .serialize(),
             "foo&lt;span&gt;<span>"
         )
     }
@@ -149,12 +247,13 @@ mod tests {
     #[test]
     fn interpolating_expressions() {
         // interpolating strings
-        assert_eq! (
+        assert_eq!(
             html! {
                 div {}
                 "hello";
                 span {}
-            }.serialize(),
+            }
+            .serialize(),
             "<div></div>hello<span></span>"
         );
 
@@ -166,11 +265,12 @@ mod tests {
         };
 
         assert_eq!(
-            html!{
+            html! {
                 form {
                     node;
                 }
-            }.serialize(),
+            }
+            .serialize(),
             "<form><button>submit</button></form>"
         );
 
@@ -186,7 +286,8 @@ mod tests {
                 form {
                     form;
                 }
-            }.serialize(),
+            }
+            .serialize(),
             "<form><input><button type=\"submit\"></button><select></select></form>"
         );
     }

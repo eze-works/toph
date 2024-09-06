@@ -1,14 +1,11 @@
 [package]
 name = "toph"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
-description = "Simple HTML generation library"
+description = "An HTML generation library"
 repository = "https://github.com/eze-works/toph"
 categories = ["template-engine"]
 
 keywords = ["template", "html"]
-
-[dependencies]
-paste = "1.0.14"

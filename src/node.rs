@@ -19,6 +19,7 @@ impl Element {
         .contains(&self.tag.to_lowercase().as_str())
     }
 }
+
 /// See [`Node`]
 #[derive(Debug, Clone)]
 pub struct Text(String);
@@ -27,6 +28,9 @@ pub struct Text(String);
 #[derive(Debug, Clone)]
 pub struct Fragment(Vec<Node>);
 
+/// A node in an HTML tree structure
+///
+/// The [`html`](crate::html!) macro creates instances of this type
 #[derive(Debug, Clone)]
 pub enum Node {
     /// An HTML element like `<p>` or `<div>`
@@ -40,6 +44,9 @@ pub enum Node {
     Fragment(Fragment),
 }
 
+/// Returns a text [`Node`] whose contents are not HTML escaped
+///
+/// See the [`html`](crate::html!) macro for more details
 pub fn raw_text(text: impl AsRef<str>) -> Node {
     Node::RawText(Text(text.as_ref().to_string()))
 }
@@ -50,6 +57,7 @@ enum Tag<'n> {
 }
 
 impl Node {
+    #[doc(hidden)]
     pub fn element(tag: &'static str, attributes: Vec<Attribute>) -> Node {
         let tag = if tag.to_lowercase() == "doctype" {
             "!doctype"
@@ -64,10 +72,12 @@ impl Node {
         })
     }
 
+    #[doc(hidden)]
     pub fn fragment() -> Node {
         Node::Fragment(Fragment(vec![]))
     }
 
+    #[doc(hidden)]
     pub fn append_child(&mut self, child: Node) {
         match self {
             Node::Fragment(Fragment(nodes)) => nodes.push(child),
@@ -76,6 +86,7 @@ impl Node {
         }
     }
 
+    /// Converts the Node to an HTML string
     pub fn serialize(&self) -> String {
         let mut buffer = String::new();
         let mut visit_later = vec![Tag::Open(self)];
