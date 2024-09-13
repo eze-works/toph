@@ -1,6 +1,6 @@
 use crate::encode;
 use crate::Attribute;
-use std::fmt::Write;
+use std::fmt::{Display};
 
 /// See [`Node`]
 #[derive(Debug, Clone)]
@@ -85,63 +85,56 @@ impl Node {
             Node::Text(_) | Node::RawText(_) => panic!("cannot add child to text node"),
         }
     }
+}
 
+impl Display for Node {
     /// Converts the Node to an HTML string
-    pub fn serialize(&self) -> String {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Serialization is done by traversing the tree in a depth-first manner.
         // Open tags are serialized on the way down, closing tags are serialized on the way up
-
-        let mut buffer = String::new();
         let mut visit_later = vec![Tag::Open(self)];
 
         while let Some(t) = visit_later.pop() {
             match t {
-                Tag::Open(node) => match node {
-                    Node::Text(Text(s)) => {
-                        write!(buffer, "{}", encode::html(s)).unwrap();
-                    }
-                    Node::RawText(Text(s)) => {
-                        write!(buffer, "{s}").unwrap();
-                    }
-                    Node::Element(
-                        el @ Element {
-                            tag,
-                            attributes,
-                            children,
-                        },
-                    ) => {
-                        let attributes = attributes
-                            .iter()
-                            .map(|a| a.to_string())
-                            .collect::<Vec<_>>()
-                            .join("");
+                Tag::Open(Node::Text(Text(s))) => {
+                    write!(f, "{}", encode::html(s))?;
+                }
+                Tag::Open(Node::RawText(Text(s))) => {
+                    write!(f, "{s}")?;
+                }
+                Tag::Open(Node::Element(el)) => {
+                    let attributes = el
+                        .attributes
+                        .iter()
+                        .map(|a| a.to_string())
+                        .collect::<Vec<_>>()
+                        .join("");
 
-                        write!(buffer, "<{}{}>", tag.replace('_', "-"), attributes).unwrap();
+                    write!(f, "<{}{}>", el.tag.replace('_', "-"), attributes)?;
 
-                        if el.is_void() {
-                            continue;
-                        }
-
-                        // re-visit this node after its children have been visited
-                        visit_later.push(Tag::Close(el.tag));
-
-                        for child in children.iter().rev() {
-                            visit_later.push(Tag::Open(child));
-                        }
+                    if el.is_void() {
+                        continue;
                     }
-                    Node::Fragment(Fragment(nodes)) => {
-                        for child in nodes.iter().rev() {
-                            visit_later.push(Tag::Open(child));
-                        }
+
+                    // re-visit this node after its children have been visited
+                    visit_later.push(Tag::Close(el.tag));
+
+                    for child in el.children.iter().rev() {
+                        visit_later.push(Tag::Open(child));
                     }
-                },
+                }
+                Tag::Open(Node::Fragment(fragment)) => {
+                    for child in fragment.0.iter().rev() {
+                        visit_later.push(Tag::Open(child));
+                    }
+                }
                 Tag::Close(tag) => {
-                    write!(buffer, "</{}>", tag.replace('_', "-")).unwrap();
+                    write!(f, "</{}>", tag.replace('_', "-"))?;
                 }
             }
         }
 
-        buffer
+        Ok(())
     }
 }
 

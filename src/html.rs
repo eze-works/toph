@@ -42,7 +42,7 @@ macro_rules! html_impl {
 /// assert_eq!(
 ///     html! {
 ///         div {}
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div></div>",
 /// );
 /// ```
@@ -54,7 +54,7 @@ macro_rules! html_impl {
 /// assert_eq!(
 ///     html! {
 ///         div [class: "container", id: "main"] {}
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div class=\"container\" id=\"main\"></div>"
 /// );
 /// ```
@@ -66,7 +66,7 @@ macro_rules! html_impl {
 /// assert_eq!(
 ///     html! {
 ///         div [async: false, readonly: true] {}
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div readonly></div>"
 /// );
 /// ```
@@ -83,7 +83,7 @@ macro_rules! html_impl {
 ///                 }
 ///             }
 ///         }
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div><span><p></p></span></div>"
 /// );
 /// ```
@@ -102,7 +102,7 @@ macro_rules! html_impl {
 ///             world;
 ///             bye.map(|s| html! { s; });
 ///         }
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div>hello<span> world!</span>byenow</div>"
 /// );
 /// ```
@@ -119,7 +119,7 @@ macro_rules! html_impl {
 ///             "<span>";
 ///             raw_text("<span>");
 ///         }
-///     }.serialize(),
+///     }.to_string(),
 ///     "<div class=\"&quot;\">&lt;span&gt;<span></div>"
 /// );
 /// ```
@@ -140,7 +140,7 @@ mod tests {
             html! {
                 div {}
             }
-            .serialize(),
+            .to_string(),
             "<div></div>"
         );
 
@@ -149,7 +149,7 @@ mod tests {
             html! {
                 custom_element {}
             }
-            .serialize(),
+            .to_string(),
             "<custom-element></custom-element>"
         );
     }
@@ -160,7 +160,7 @@ mod tests {
             html! {
                 div [class: "container", readonly: true, async: false] {}
             }
-            .serialize(),
+            .to_string(),
             "<div class=\"container\" readonly></div>"
         );
 
@@ -169,7 +169,7 @@ mod tests {
             html! {
                 div [data_one: "two"] {}
             }
-            .serialize(),
+            .to_string(),
             "<div data-one=\"two\"></div>"
         );
 
@@ -178,7 +178,7 @@ mod tests {
             html! {
                 div [key: "a \"templating\" engine"] {}
             }
-            .serialize(),
+            .to_string(),
             "<div key=\"a &quot;templating&quot; engine\"></div>"
         );
     }
@@ -192,7 +192,7 @@ mod tests {
                     span {}
                 }
             }
-            .serialize(),
+            .to_string(),
             "<div class=\"container\"><p></p><span></span></div>"
         )
     }
@@ -205,7 +205,7 @@ mod tests {
                     p {}
                 }
             }
-            .serialize(),
+            .to_string(),
             "<img>"
         );
 
@@ -214,7 +214,7 @@ mod tests {
             html! {
                 IMG { p {} }
             }
-            .serialize(),
+            .to_string(),
             "<IMG>"
         );
     }
@@ -225,7 +225,7 @@ mod tests {
             html! {
                 DOCtype {}
             }
-            .serialize(),
+            .to_string(),
             "<!doctype>"
         );
     }
@@ -239,7 +239,7 @@ mod tests {
                 "<span>";
                 raw_text("<span>");
             }
-            .serialize(),
+            .to_string(),
             "foo&lt;span&gt;<span>"
         )
     }
@@ -253,7 +253,7 @@ mod tests {
                 "hello";
                 span {}
             }
-            .serialize(),
+            .to_string(),
             "<div></div>hello<span></span>"
         );
 
@@ -270,7 +270,7 @@ mod tests {
                     node;
                 }
             }
-            .serialize(),
+            .to_string(),
             "<form><button>submit</button></form>"
         );
 
@@ -287,7 +287,7 @@ mod tests {
                     form;
                 }
             }
-            .serialize(),
+            .to_string(),
             "<form><input><button type=\"submit\"></button><select></select></form>"
         );
     }
