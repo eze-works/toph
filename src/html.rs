@@ -47,15 +47,17 @@ macro_rules! html_impl {
 /// );
 /// ```
 ///
-/// Elements can have attributes. These are expressed as a key-value list seperated by commas:
+/// Elements can have attributes. These are expressed as a key-value list seperated by commas.
+///
+/// Double quotes in attribute values are escaped.
 ///
 /// ```
 /// # use toph::html;
 /// assert_eq!(
 ///     html! {
-///         div [class: "container", id: "main"] {}
+///         div [class: "y\"all", id: "main"] {}
 ///     }.to_string(),
-///     "<div class=\"container\" id=\"main\"></div>"
+///     "<div class=\"y&quot;all\" id=\"main\"></div>"
 /// );
 /// ```
 ///
@@ -88,41 +90,54 @@ macro_rules! html_impl {
 /// );
 /// ```
 ///
-/// A child may also be a Rust expression that returns a string, a `Node` or a list of `Node`s.
-/// Expressions should be terminated with a semi-colon:
+/// Insert HTML-escaped text with [`text()`](crate::text).
+/// Insert raw, unescaped text with [`raw_text()`](crate::text).
+///
+/// There is no other way to insert text as a child.
+///
+/// Anything that implements [`Display`](std::fmt::Display) can be passed as an argument.
+///
+/// Text must be terminated with a semicolon.
 ///
 /// ```
-/// # use toph::html;
-/// let world = html! { span { " world!"; } };
-/// let bye = ["bye", "now"];
-/// assert_eq!(
-///     html! {
-///         div {
-///             "hello";
-///             world;
-///             bye.map(|s| html! { s; });
-///         }
-///     }.to_string(),
-///     "<div>hello<span> world!</span>byenow</div>"
-/// );
-/// ```
-///
-/// Text is automatically HTML-escaped.
-/// You can opt-out with [`raw_text`](crate::raw_text).
-/// Double quotes in attribute values are also escaped.
-///
-/// ```
-/// # use toph::{raw_text, html};
+/// # use toph::{raw_text, text, html};
 /// assert_eq!(
 ///     html! {
 ///         div[class: "\""] {
-///             "<span>";
+///             text("<span>");
 ///             raw_text("<span>");
 ///         }
 ///     }.to_string(),
 ///     "<div class=\"&quot;\">&lt;span&gt;<span></div>"
 /// );
 /// ```
+///
+/// Last, but by no means least, a child may also be any Rust expression that returns one or more `Node`s.
+///
+/// More specifically, in addition to expressions returning a single `Node`, any expression whose return value implements `IntoIterator<Item = Node>` qualifies.
+/// Among other things, this means you can use:
+/// - `Result<Node, E>`
+/// - `Option<Node>`,
+/// - Any iterator that yields `Node`s
+/// - An array or `Vec` of `Node`s.
+///
+/// Expressions must also be terminated with a semicolon.
+///
+/// ```
+/// # use toph::{text, html};
+/// let option = Some(html!{ text("option"); });
+/// let iterator = (0..=2).into_iter().map(|n| html! { text(n); });
+/// assert_eq!(
+///     html! {
+///         div {
+///             option;
+///             iterator;
+///         }
+///     }.to_string(),
+///     "<div>option012</div>"
+/// );
+/// ```
+///
 #[macro_export]
 macro_rules! html {
     ($($input:tt)*) => {{
@@ -134,6 +149,7 @@ macro_rules! html {
 
 #[cfg(test)]
 mod tests {
+    use crate::{raw_text, text};
     #[test]
     fn empty_element() {
         assert_eq!(
@@ -232,11 +248,10 @@ mod tests {
 
     #[test]
     fn escaping_strings() {
-        use crate::raw_text;
         assert_eq!(
             html! {
-                "foo";
-                "<span>";
+                text("foo");
+                text("<span>");
                 raw_text("<span>");
             }
             .to_string(),
@@ -250,7 +265,7 @@ mod tests {
         assert_eq!(
             html! {
                 div {}
-                "hello";
+                text("hello");
                 span {}
             }
             .to_string(),
@@ -260,7 +275,7 @@ mod tests {
         // interpolating another node
         let node = html! {
             button {
-                "submit";
+                text("submit");
             }
         };
 

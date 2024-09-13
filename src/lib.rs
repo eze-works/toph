@@ -6,7 +6,7 @@ mod node;
 #[doc(hidden)]
 pub use attribute::Attribute;
 
-pub use node::{raw_text, Element, Fragment, Node, Text};
+pub use node::{raw_text, text, Element, Fragment, Node, Text};
 
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]

@@ -1,6 +1,6 @@
 use crate::encode;
 use crate::Attribute;
-use std::fmt::{Display};
+use std::fmt::Display;
 
 /// See [`Node`]
 #[derive(Debug, Clone)]
@@ -44,11 +44,18 @@ pub enum Node {
     Fragment(Fragment),
 }
 
+/// Returns a text [`Node`] whose contents are HTML escaped
+///
+/// See the [`html`](crate::html!) macro for more details
+pub fn text(text: impl Display) -> Node {
+    Node::Text(Text(text.to_string()))
+}
+
 /// Returns a text [`Node`] whose contents are not HTML escaped
 ///
 /// See the [`html`](crate::html!) macro for more details
-pub fn raw_text(text: impl AsRef<str>) -> Node {
-    Node::RawText(Text(text.as_ref().to_string()))
+pub fn raw_text(text: impl Display) -> Node {
+    Node::RawText(Text(text.to_string()))
 }
 
 enum Tag<'n> {
@@ -138,34 +145,11 @@ impl Display for Node {
     }
 }
 
-impl From<&str> for Node {
-    fn from(value: &str) -> Self {
-        Node::Text(Text(value.to_string()))
+impl<T> From<T> for Node
+where
+    T: IntoIterator<Item = Node>,
+{
+    fn from(value: T) -> Self {
+        Node::Fragment(Fragment(value.into_iter().collect::<Vec<Node>>()))
     }
 }
-
-impl From<String> for Node {
-    fn from(value: String) -> Self {
-        Node::from(value.as_str())
-    }
-}
-
-impl From<Vec<Node>> for Node {
-    fn from(value: Vec<Node>) -> Self {
-        Node::Fragment(Fragment(value))
-    }
-}
-
-macro_rules! impl_from_array {
-    ($($count:literal)*) => {
-        $(
-            impl From<[Node; $count]> for Node {
-                fn from(value: [Node; $count]) -> Self {
-                    Node::Fragment(Fragment(value.to_vec()))
-                }
-            }
-        )*
-    }
-}
-
-impl_from_array! { 0 1 2 3 4 5 6 7 8 9 10 11 12 }
