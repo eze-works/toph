@@ -149,7 +149,7 @@ macro_rules! html {
 
 #[cfg(test)]
 mod tests {
-    use crate::{raw_text, text};
+    use crate::{raw_text, text, Node};
     #[test]
     fn empty_element() {
         assert_eq!(
@@ -304,6 +304,21 @@ mod tests {
             }
             .to_string(),
             "<form><input><button type=\"submit\"></button><select></select></form>"
+        );
+
+        // interpolating other iterator-like structures
+        let no: Option<Node> = None;
+        let yes = Some(html! { text("yes"); });
+        let success: Result<Node, ()> = Ok(html! { text("success"); });
+
+        assert_eq!(
+            html! {
+                no;
+                yes;
+                success;
+            }
+            .to_string(),
+            "yessuccess"
         );
     }
 }
