@@ -47,14 +47,14 @@ pub enum Node {
 /// Returns a text [`Node`] whose contents are HTML escaped
 ///
 /// See the [`html`](crate::html!) macro for more details
-pub fn text(text: impl Display) -> Node {
+pub fn text(text: impl Into<String>) -> Node {
     Node::Text(Text(text.to_string()))
 }
 
 /// Returns a text [`Node`] whose contents are not HTML escaped
 ///
 /// See the [`html`](crate::html!) macro for more details
-pub fn raw_text(text: impl Display) -> Node {
+pub fn raw_text(text: impl Into<String>) -> Node {
     Node::RawText(Text(text.to_string()))
 }
 
