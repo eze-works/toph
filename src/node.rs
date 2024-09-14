@@ -48,14 +48,14 @@ pub enum Node {
 ///
 /// See the [`html`](crate::html!) macro for more details
 pub fn text(text: impl Into<String>) -> Node {
-    Node::Text(Text(text.into()))
+    Node::Text(Text(text.to_string()))
 }
 
 /// Returns a text [`Node`] whose contents are not HTML escaped
 ///
 /// See the [`html`](crate::html!) macro for more details
 pub fn raw_text(text: impl Into<String>) -> Node {
-    Node::RawText(Text(text.into()))
+    Node::RawText(Text(text.to_string()))
 }
 
 enum Tag<'n> {
