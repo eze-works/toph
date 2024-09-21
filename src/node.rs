@@ -145,6 +145,12 @@ impl Display for Node {
     }
 }
 
+impl From<Node> for String {
+    fn from(value: Node) -> Self {
+        value.to_string()
+    }
+}
+
 impl<T> From<T> for Node
 where
     T: IntoIterator<Item = Node>,
