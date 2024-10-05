@@ -10,7 +10,7 @@ This tree can then be converted to a string.
 
 ```rust
 let _ = toph::html! {
-    doctype {}
+    doctype["html"] {}
     html {
         title {
             toph::text("hello world");
