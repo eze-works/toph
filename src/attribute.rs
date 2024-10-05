@@ -5,26 +5,8 @@ use crate::encode;
 pub enum Attribute {
     /// A regular HTML attribute
     Regular(&'static str, String),
-    /// Encodes the presence or absence of an HTML boolean attribute
-    Bool(&'static str, bool),
-}
-
-impl From<(&'static str, String)> for Attribute {
-    fn from(value: (&'static str, String)) -> Self {
-        Attribute::Regular(value.0, value.1)
-    }
-}
-
-impl From<(&'static str, &str)> for Attribute {
-    fn from(value: (&'static str, &str)) -> Self {
-        Attribute::Regular(value.0, value.1.to_string())
-    }
-}
-
-impl From<(&'static str, bool)> for Attribute {
-    fn from(value: (&'static str, bool)) -> Self {
-        Attribute::Bool(value.0, value.1)
-    }
+    /// Encodes the presence
+    Bool(&'static str),
 }
 
 impl std::fmt::Display for Attribute {
@@ -33,8 +15,7 @@ impl std::fmt::Display for Attribute {
             Attribute::Regular(k, v) => {
                 write!(f, " {}=\"{}\"", k.replace('_', "-"), encode::attr(v))
             }
-            Attribute::Bool(k, present) if *present => write!(f, " {}", k.replace('_', "-")),
-            Attribute::Bool(_, _) => Ok(()),
+            Attribute::Bool(k) => write!(f, " {}", k.replace('_', "-")),
         }
     }
 }
@@ -42,13 +23,32 @@ impl std::fmt::Display for Attribute {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! attributes {
-    ($($name:ident : $value:expr),*) => {{
-        let mut attrs = vec![];
-        $(
-            let key = stringify!($name);
-            let attribute = $crate::Attribute::from((key, $value));
-            attrs.push(attribute);
-        )*
-        attrs
-    }};
+    // A regular attribute
+    (($container:expr) $name:ident : $value:expr, $($rest:tt)*) => {
+        let name = stringify!($name);
+        let value = $value.to_string();
+        $container.push($crate::Attribute::Regular(name, value));
+        $crate::attributes!(($container) $($rest)*);
+    };
+
+    (($container:expr) $name:ident : $value:expr) => {
+        let name = stringify!($name);
+        let value = $value.to_string();
+        $container.push($crate::Attribute::Regular(name, value));
+    };
+
+    // A boolean attribute
+    (($container:expr) $name:expr, $($rest:tt)*) => {
+        if !$name.is_empty() {
+            $container.push($crate::Attribute::Bool($name));
+        }
+        $crate::attributes!(($container) $($rest)*);
+    };
+
+    (($container:expr) $name:expr) => {
+        if !$name.is_empty() {
+            $container.push($crate::Attribute::Bool($name));
+        }
+    };
+
 }

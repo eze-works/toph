@@ -5,10 +5,13 @@ macro_rules! html_impl {
 
     // div [<attributes>] { <children> }
     (($parent:expr) $tag:ident [$($attributes:tt)*] {$($children:tt)*} $($rest:tt)*) => {
+        let mut list = Vec::new();
+        $crate::attributes!((list) $($attributes)*);
+
         let tag = String::from(stringify!($tag));
-        let attributes = $crate::attributes!($($attributes)*);
+
         #[allow(unused_mut)]
-        let mut element = $crate::Node::element(tag, attributes.to_vec());
+        let mut element = $crate::Node::element(tag, list);
         $crate::html_impl!((&mut element) $($children)*);
         $parent.append_child(element);
         $crate::html_impl!(($parent) $($rest)*);
@@ -48,7 +51,10 @@ macro_rules! html_impl {
 ///
 /// Elements can have attributes.
 /// These are expressed as a key-value list seperated by commas.
-/// Underscores in attribute names are converted to dashes.
+///
+/// The key must be a valid rust identifier.
+/// The value must implement [`Display`](std::fmt::Display).
+/// Since dashes are not valid identifiers, underscores in attribute names are converted to dashes.
 ///
 /// Double quotes in attribute values are escaped.
 ///
@@ -58,18 +64,6 @@ macro_rules! html_impl {
 ///         div [data_count: "y\"all", id: "main"] {}
 ///     }.to_string(),
 ///     "<div data-count=\"y&quot;all\" id=\"main\"></div>"
-/// );
-/// ```
-///
-/// An attribute with a boolean value is treated as an [HTML boolean attribute](https://developer.mozilla.org/en-US/docs/Glossary/Boolean/HTML)
-///
-/// ```
-/// use toph::html;
-/// assert_eq!(
-///     toph::html! {
-///         div [async: false, readonly: true] {}
-///     }.to_string(),
-///     "<div readonly></div>"
 /// );
 /// ```
 ///
@@ -84,6 +78,19 @@ macro_rules! html_impl {
 ///     }.to_string(),
 ///     "<div data-tagname=\"div\"></div>"
 /// )
+/// ```
+///
+/// [HTML boolean attribute](https://developer.mozilla.org/en-US/docs/Glossary/Boolean/HTML) can be expressed as `&'static str` expressions.
+///
+/// ```
+/// let async_attr = if true { "" } else { "async" };
+/// let readonly_attr = if true { "readonly" } else { "" };
+/// assert_eq!(
+///     toph::html! {
+///         div [readonly_attr , async_attr, "other"] {}
+///     }.to_string(),
+///     "<div readonly other></div>"
+/// );
 /// ```
 ///
 /// Elements can have children:
@@ -182,9 +189,10 @@ mod tests {
 
     #[test]
     fn element_with_attributes() {
+        // boolean attributes
         assert_eq!(
             html! {
-                div [class: "container", readonly: true, async: false] {}
+                div [class: "container", "readonly", ""] {}
             }
             .to_string(),
             "<div class=\"container\" readonly></div>"
