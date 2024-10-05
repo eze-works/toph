@@ -9,20 +9,18 @@ This tree can then be converted to a string.
 [Crates.io](https://crates.io/crates/toph)
 
 ```rust
-use toph::{text, html};
-
-let _ = html! {
+let _ = toph::html! {
     doctype {}
     html {
         title {
-            text("hello world");
+            toph::text("hello world");
         }
     }
     body {
         p[class: "intro"] {
-            text("This is an example of the ");
+            toph::text("This is an example of the ");
             a[href: "https://github.com/eze-works/toph"] {
-                text(" template language");
+                toph::text(" template language");
             }
         }
     }
