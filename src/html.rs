@@ -38,47 +38,59 @@ macro_rules! html_impl {
 /// An identifier followed by curly braces represents an HTML element:
 ///
 /// ```
-/// # use toph::html;
 /// assert_eq!(
-///     html! {
+///     toph::html! {
 ///         div {}
 ///     }.to_string(),
 ///     "<div></div>",
 /// );
 /// ```
 ///
-/// Elements can have attributes. These are expressed as a key-value list seperated by commas.
+/// Elements can have attributes.
+/// These are expressed as a key-value list seperated by commas.
+/// Underscores in attribute names are converted to dashes.
 ///
 /// Double quotes in attribute values are escaped.
 ///
 /// ```
-/// # use toph::html;
 /// assert_eq!(
-///     html! {
-///         div [class: "y\"all", id: "main"] {}
+///     toph::html! {
+///         div [data_count: "y\"all", id: "main"] {}
 ///     }.to_string(),
-///     "<div class=\"y&quot;all\" id=\"main\"></div>"
+///     "<div data-count=\"y&quot;all\" id=\"main\"></div>"
 /// );
 /// ```
 ///
 /// An attribute with a boolean value is treated as an [HTML boolean attribute](https://developer.mozilla.org/en-US/docs/Glossary/Boolean/HTML)
 ///
 /// ```
-/// # use toph::html;
+/// use toph::html;
 /// assert_eq!(
-///     html! {
+///     toph::html! {
 ///         div [async: false, readonly: true] {}
 ///     }.to_string(),
 ///     "<div readonly></div>"
 /// );
 /// ```
 ///
+/// As a special case, the `data-tagname` attribute can be used to override the name of the html tag.
+/// This is useful when the tag name is determined at runtime:
+///
+/// ```
+/// let tagname = "div";
+/// assert_eq!(
+///     toph::html! {
+///         thiscanbeanything[data_tagname: tagname] { }
+///     }.to_string(),
+///     "<div data-tagname=\"div\"></div>"
+/// )
+/// ```
+///
 /// Elements can have children:
 ///
 /// ```
-/// # use toph::html;
 /// assert_eq!(
-///     html! {
+///     toph::html! {
 ///         div {
 ///             span {
 ///                 p {
@@ -100,12 +112,11 @@ macro_rules! html_impl {
 /// Text must be terminated with a semicolon.
 ///
 /// ```
-/// # use toph::{raw_text, text, html};
 /// assert_eq!(
-///     html! {
+///     toph::html! {
 ///         div[class: "\""] {
-///             text("<span>");
-///             raw_text("<span>");
+///             toph::text("<span>");
+///             toph::raw_text("<span>");
 ///         }
 ///     }.to_string(),
 ///     "<div class=\"&quot;\">&lt;span&gt;<span></div>"
@@ -124,11 +135,10 @@ macro_rules! html_impl {
 /// Expressions must also be terminated with a semicolon.
 ///
 /// ```
-/// # use toph::{text, html};
-/// let option = Some(html!{ text("option"); });
-/// let iterator = (0..=2).into_iter().map(|n| html! { text(n); });
+/// let option = Some(toph::html!{ toph::text("option"); });
+/// let iterator = (0..=2).into_iter().map(|n| toph::html! { toph::text(n); });
 /// assert_eq!(
-///     html! {
+///     toph::html! {
 ///         div {
 ///             option;
 ///             iterator;
@@ -319,6 +329,17 @@ mod tests {
             }
             .to_string(),
             "yessuccess"
+        );
+    }
+
+    #[test]
+    fn overriding_the_tagname() {
+        assert_eq!(
+            html! {
+                custom[data_tagname: "h1"] { }
+            }
+            .to_string(),
+            "<h1 data-tagname=\"h1\"></h1>"
         );
     }
 }

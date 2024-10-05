@@ -73,8 +73,13 @@ impl Node {
             tag
         };
 
+        let tag_override = attributes.iter().find_map(|attr| match attr {
+            Attribute::Regular("data_tagname", t) => Some(t.clone()),
+            _ => None,
+        });
+
         Node::Element(Element {
-            tag,
+            tag: tag_override.unwrap_or(tag),
             attributes,
             children: vec![],
         })
