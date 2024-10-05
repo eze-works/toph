@@ -5,7 +5,7 @@ macro_rules! html_impl {
 
     // div [<attributes>] { <children> }
     (($parent:expr) $tag:ident [$($attributes:tt)*] {$($children:tt)*} $($rest:tt)*) => {
-        let tag = stringify!($tag);
+        let tag = String::from(stringify!($tag));
         let attributes = $crate::attributes!($($attributes)*);
         #[allow(unused_mut)]
         let mut element = $crate::Node::element(tag, attributes.to_vec());
@@ -16,7 +16,7 @@ macro_rules! html_impl {
 
     // div { <children> }
     (($parent:expr) $tag:ident {$($children:tt)*} $($rest:tt)*) => {
-        let tag = stringify!($tag);
+        let tag = String::from(stringify!($tag));
         #[allow(unused_mut)]
         let mut element = $crate::Node::element(tag, vec![]);
         $crate::html_impl!((&mut element) $($children)*);
@@ -231,7 +231,7 @@ mod tests {
                 IMG { p {} }
             }
             .to_string(),
-            "<IMG>"
+            "<img>"
         );
     }
 

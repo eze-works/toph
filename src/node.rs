@@ -5,7 +5,7 @@ use std::fmt::Display;
 /// See [`Node`]
 #[derive(Debug, Clone)]
 pub struct Element {
-    tag: &'static str,
+    tag: String,
     attributes: Vec<Attribute>,
     children: Vec<Node>,
 }
@@ -60,14 +60,15 @@ pub fn raw_text(text: impl Display) -> Node {
 
 enum Tag<'n> {
     Open(&'n Node),
-    Close(&'static str),
+    Close(&'n Element),
 }
 
 impl Node {
     #[doc(hidden)]
-    pub fn element(tag: &'static str, attributes: Vec<Attribute>) -> Node {
-        let tag = if tag.to_lowercase() == "doctype" {
-            "!doctype"
+    pub fn element(tag: String, attributes: Vec<Attribute>) -> Node {
+        let tag = tag.to_ascii_lowercase();
+        let tag = if tag == "doctype" {
+            String::from("!doctype")
         } else {
             tag
         };
@@ -124,7 +125,7 @@ impl Display for Node {
                     }
 
                     // re-visit this node after its children have been visited
-                    visit_later.push(Tag::Close(el.tag));
+                    visit_later.push(Tag::Close(el));
 
                     for child in el.children.iter().rev() {
                         visit_later.push(Tag::Open(child));
@@ -135,8 +136,8 @@ impl Display for Node {
                         visit_later.push(Tag::Open(child));
                     }
                 }
-                Tag::Close(tag) => {
-                    write!(f, "</{}>", tag.replace('_', "-"))?;
+                Tag::Close(el) => {
+                    write!(f, "</{}>", el.tag.replace('_', "-"))?;
                 }
             }
         }
